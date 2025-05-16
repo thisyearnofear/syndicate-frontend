@@ -30,10 +30,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <div className="max-w-7xl mx-auto flex justify-between items-center">
                 <h1 className="text-xl font-bold">Lens Starter</h1>
                 <div className="flex items-center gap-4">
-                  <Link href="https://lens.xyz/docs" target="_blank" className="text-primary hover:underline">
+                  <Link href="https://lens.xyz/docs" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                     Docs
                   </Link>
-                  <Link href="https://developer.lens.xyz/apps" target="_blank" className="text-primary hover:underline">
+                  <Link href="https://developer.lens.xyz/apps" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                     Create an App
                   </Link>
                   <ThemeToggle />
@@ -52,7 +52,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                     <div>
                       <h3 className="text-lg font-semibold mb-2">Getting Started</h3>
                       <ol className="list-decimal list-inside space-y-2">
-                        <li>Create a Lens app at <a href="https://developer.lens.xyz/apps" target="_blank" className="text-primary hover:underline">developer.lens.xyz/apps</a></li>
+                        <li>Create a Lens app at <a href="https://developer.lens.xyz/apps" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">developer.lens.xyz/apps</a></li>
                         <li>Copy your App ID to the <code className="bg-muted px-1 rounded">.env</code> file</li>
                         <li>Login with your lens account below</li>
                       </ol>

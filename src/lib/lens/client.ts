@@ -1,12 +1,21 @@
 import { mainnet, PublicClient, staging, testnet } from "@lens-protocol/client";
 import { clientCookieStorage, cookieStorage } from "./storage";
-import { env } from "process";
 
 const isServer = typeof window === "undefined";
 
+// Safe access to environment variables
+const getEnvVar = (name: string, fallback: string = ""): string => {
+  return typeof process !== "undefined" && process.env 
+    ? (process.env[name] || fallback) 
+    : fallback;
+};
+
+const APP_URL = getEnvVar("NEXT_PUBLIC_APP_URL", "http://localhost:3000");
+const ENV = getEnvVar("NEXT_PUBLIC_ENVIRONMENT", "development");
+
 const publicClient = PublicClient.create({
-  environment: env.NEXT_PUBLIC_ENVIRONMENT === "development" ? testnet : mainnet,
-  origin: "https://totally.real.com",
+  environment: ENV === "development" ? testnet : mainnet,
+  origin: APP_URL,
   storage: isServer ? cookieStorage : clientCookieStorage,
 });
 

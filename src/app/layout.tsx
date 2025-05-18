@@ -1,67 +1,37 @@
-import { Geist, Geist_Mono } from "next/font/google";
-import { Providers } from "@/components/providers";
-import "../../public/globals.css";
-import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import "./globals.css";
+import { Providers } from "@/components/web3/Providers";
 
 export const metadata = {
-  title: "Lens App",
-  description: "Future of decentralized social",
+  title: "Syndicate - Win Together, Impact Together",
+  description:
+    "Syndicate: SocialFi-powered, programmable philanthropy. Pool your luck, pledge your impact, and win together on Lens.",
   icons: [{ rel: "icon", url: "/favicon.svg" }],
+  metadataBase: new URL("https://syndicate-lens.vercel.app"),
+  openGraph: {
+    title: "Syndicate - Win Together, Impact Together",
+    description:
+      "Syndicate: SocialFi-powered, programmable philanthropy. Join cause-driven lottery syndicates powered by Lens Protocol.",
+    images: [
+      {
+        url: "/icon.png",
+        width: 120,
+        height: 120,
+        alt: "Syndicate Logo",
+      },
+    ],
+  },
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased m-0 p-0 overflow-hidden`}>
+      <body className="antialiased m-0 p-0 min-h-screen bg-black text-white">
         <Providers>
-          <div>
-            <div className="fixed top-0 left-0 w-full bg-background/80 backdrop-blur-sm border-b z-10 p-4">
-              <div className="max-w-7xl mx-auto flex justify-between items-center">
-                <h1 className="text-xl font-bold">Lens Starter</h1>
-                <div className="flex items-center gap-4">
-                  <Link href="https://lens.xyz/docs" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                    Docs
-                  </Link>
-                  <Link href="https://developer.lens.xyz/apps" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                    Create an App
-                  </Link>
-                  <ThemeToggle />
-                </div>
-              </div>
-            </div>
-
-            <main className="h-screen w-screen overflow-auto bg-background pt-16">
-              <div className="max-w-7xl mx-auto p-4">
-                <div className="mb-8 pb-8 border-b">
-                  <h2 className="text-2xl font-bold mb-4">Welcome to Lens Starter Template!</h2>
-                  <p className="mb-4">
-                    A template for building decentralized social applications on Lens Protocol.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Getting Started</h3>
-                      <ol className="list-decimal list-inside space-y-2">
-                        <li>Create a Lens app at <a href="https://developer.lens.xyz/apps" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">developer.lens.xyz/apps</a></li>
-                        <li>Copy your App ID to the <code className="bg-muted px-1 rounded">.env</code> file</li>
-                        <li>Login with your lens account below</li>
-                      </ol>
-                    </div>
-                  </div>
-                </div>
-                {children}
-              </div>
-            </main></div>
+          <main className="flex flex-col items-center w-full">{children}</main>
         </Providers>
       </body>
     </html>

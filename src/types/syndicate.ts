@@ -1,6 +1,7 @@
 /**
  * Syndicate related types
  */
+import { Profile, ProfileId } from '@/lib/lens/profiles';
 
 /**
  * Represents a Syndicate entity
@@ -41,6 +42,18 @@ export interface Syndicate {
 
   /** Additional images for grid display */
   gridImages?: string[];
+  
+  /** Lens profile ID of the creator */
+  creatorProfileId?: ProfileId;
+  
+  /** Lens handle of the creator */
+  creatorHandle?: string;
+  
+  /** Members' Lens profile IDs */
+  memberProfileIds?: ProfileId[];
+  
+  /** The full Lens profile object of the creator, if available */
+  creatorProfile?: Profile;
 }
 
 /**
@@ -75,4 +88,62 @@ export interface SyndicateGridProps {
 
   /** Whether the grid is in a loading state */
   isLoading?: boolean;
+}
+
+/**
+ * Represents a Syndicate member with their Lens profile
+ */
+export interface SyndicateMember {
+  /** Unique identifier for the member */
+  id: string | number;
+  
+  /** Member's wallet address */
+  address: string;
+  
+  /** Member's name or display name */
+  name: string;
+  
+  /** Member's avatar URL */
+  avatar?: string;
+  
+  /** Member's contribution amount */
+  contribution?: number;
+  
+  /** Lens Profile ID */
+  profileId?: ProfileId;
+  
+  /** Lens handle */
+  handle?: string;
+  
+  /** Full Lens profile object, if available */
+  lensProfile?: Profile;
+  
+  /** Timestamp of when they joined */
+  joinedAt?: Date;
+}
+
+/**
+ * Represents an activity in a syndicate
+ */
+export interface SyndicateActivity {
+  /** Unique identifier for the activity */
+  id: string | number;
+  
+  /** Type of activity */
+  type: 'join' | 'contribute' | 'create' | 'win' | 'claim';
+  
+  /** User who performed the activity */
+  user: string;
+  
+  /** Amount involved (for contributions) */
+  amount?: number;
+  
+  /** When the activity occurred */
+  time: string;
+  
+  /** Lens profile ID of the user */
+  profileId?: ProfileId;
+  
+  /** Lens profile of the user */
+  profile?: Profile;
 }

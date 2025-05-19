@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useCrossChain } from "@/hooks/use-cross-chain";
 import { Button } from "@/components/ui/inputs/button";
-import { Card } from "@/components/ui/layouts/card";
+import { Card } from "@/components/ui/data-display/card";
 import { Loader2, ArrowLeft, CheckCircle, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
-import { 
+import {
   BASE_CHAIN_ID,
   DECENT_API_KEY,
   DEFAULT_CAUSE_PERCENTAGE,
@@ -15,7 +15,7 @@ import {
   MEGAPOT_CONTRACT_ADDRESS,
   SYNDICATE_TREASURY_ADDRESS,
   USDC_ADDRESS_BASE,
-  USDC_ADDRESS_LENS 
+  USDC_ADDRESS_LENS,
 } from "@/lib/cross-chain/constants";
 
 interface Ticket {
@@ -55,54 +55,53 @@ export function SyndicateTickets({
   const [isClaimingWinnings, setIsClaimingWinnings] = useState(false);
 
   // Find winning tickets that haven't been claimed
-  const winningTickets = tickets.filter(ticket => ticket.isWinner && !ticket.claimed);
+  const winningTickets = tickets.filter(
+    (ticket) => ticket.isWinner && !ticket.claimed
+  );
   const hasWinningTickets = winningTickets.length > 0;
-  
+
   // Initialize cross-chain hook for bridging winnings
-  const { 
-    isLoading, 
-    isPending, 
-    error, 
-    txHash, 
-    txStatus, 
-    bridgeWinnings
-  } = useCrossChain({
-    apiKey: DECENT_API_KEY,
-    onSuccess: (hash) => {
-      toast.success("Claim initiated successfully!", {
-        description: `Your winnings will be transferred from Base to Lens Chain.`,
-        action: {
-          label: "View on Explorer",
-          onClick: () => window.open(`https://basescan.io/tx/${hash}`, "_blank"),
-        },
-      });
-      
-      if (onClaimComplete) {
-        onClaimComplete(hash);
-      }
-    },
-    onError: (err) => {
-      toast.error("Claim transaction failed", {
-        description: err.message,
-      });
-      setIsClaimingWinnings(false);
-    },
-    onStatusChange: (status, data) => {
-      if (status === "executed") {
-        toast.success("Winnings claimed successfully!", {
-          description: `The winnings have been distributed to the cause (${causePercentage}%) and syndicate participants (${100-causePercentage}%).`,
+  const { isLoading, isPending, error, txHash, txStatus, bridgeWinnings } =
+    useCrossChain({
+      apiKey: DECENT_API_KEY,
+      onSuccess: (hash) => {
+        toast.success("Claim initiated successfully!", {
+          description: `Your winnings will be transferred from Base to Lens Chain.`,
+          action: {
+            label: "View on Explorer",
+            onClick: () =>
+              window.open(`https://basescan.io/tx/${hash}`, "_blank"),
+          },
+        });
+
+        if (onClaimComplete) {
+          onClaimComplete(hash);
+        }
+      },
+      onError: (err) => {
+        toast.error("Claim transaction failed", {
+          description: err.message,
         });
         setIsClaimingWinnings(false);
-        setSelectedTicket(null);
-        if (onRefresh) onRefresh();
-      } else if (status === "failed") {
-        toast.error("Transaction execution failed", {
-          description: data?.message || "Please try again later.",
-        });
-        setIsClaimingWinnings(false);
-      }
-    },
-  });
+      },
+      onStatusChange: (status, data) => {
+        if (status === "executed") {
+          toast.success("Winnings claimed successfully!", {
+            description: `The winnings have been distributed to the cause (${causePercentage}%) and syndicate participants (${
+              100 - causePercentage
+            }%).`,
+          });
+          setIsClaimingWinnings(false);
+          setSelectedTicket(null);
+          if (onRefresh) onRefresh();
+        } else if (status === "failed") {
+          toast.error("Transaction execution failed", {
+            description: data?.message || "Please try again later.",
+          });
+          setIsClaimingWinnings(false);
+        }
+      },
+    });
 
   // Handle claiming winnings
   const handleClaimWinnings = async (ticket: Ticket) => {
@@ -173,7 +172,9 @@ export function SyndicateTickets({
       ) : tickets.length === 0 ? (
         <div className="text-center py-8 text-white/70">
           <p>No tickets purchased yet.</p>
-          <p className="text-sm mt-2">Contribute to the syndicate to buy tickets.</p>
+          <p className="text-sm mt-2">
+            Contribute to the syndicate to buy tickets.
+          </p>
         </div>
       ) : isClaimingWinnings && selectedTicket ? (
         <div className="space-y-4">
@@ -192,30 +193,60 @@ export function SyndicateTickets({
           </Button>
 
           <div className="bg-gradient-to-r from-emerald-900/30 to-cyan-900/30 border border-emerald-500/30 rounded-md p-4">
-            <h4 className="text-lg font-bold text-emerald-400 mb-2">Claim Winning Ticket</h4>
+            <h4 className="text-lg font-bold text-emerald-400 mb-2">
+              Claim Winning Ticket
+            </h4>
             <p className="mb-2">Ticket #{selectedTicket.id} has won:</p>
-            <p className="text-2xl font-bold mb-3">${selectedTicket.winAmount?.toFixed(2)} USDC</p>
-            
+            <p className="text-2xl font-bold mb-3">
+              ${selectedTicket.winAmount?.toFixed(2)} USDC
+            </p>
+
             <div className="bg-black/20 p-3 rounded-md text-sm mb-4">
               <div className="flex justify-between mb-1">
-                <span className="text-white/70">To Cause ({causePercentage}%):</span>
-                <span>${((selectedTicket.winAmount || 0) * causePercentage / 100).toFixed(2)} USDC</span>
+                <span className="text-white/70">
+                  To Cause ({causePercentage}%):
+                </span>
+                <span>
+                  $
+                  {(
+                    ((selectedTicket.winAmount || 0) * causePercentage) /
+                    100
+                  ).toFixed(2)}{" "}
+                  USDC
+                </span>
               </div>
               <div className="flex justify-between mb-1">
-                <span className="text-white/70">To Participants ({100-causePercentage}%):</span>
-                <span>${((selectedTicket.winAmount || 0) * (100-causePercentage) / 100).toFixed(2)} USDC</span>
+                <span className="text-white/70">
+                  To Participants ({100 - causePercentage}%):
+                </span>
+                <span>
+                  $
+                  {(
+                    ((selectedTicket.winAmount || 0) *
+                      (100 - causePercentage)) /
+                    100
+                  ).toFixed(2)}{" "}
+                  USDC
+                </span>
               </div>
             </div>
 
             <p className="text-xs text-white/60 mb-4">
-              This is a cross-chain transaction from Base to Lens Chain. The winnings will be distributed according to the syndicate's rules.
+              This is a cross-chain transaction from Base to Lens Chain. The
+              winnings will be distributed according to the syndicate's rules.
             </p>
 
             <Button
               onClick={() => handleClaimWinnings(selectedTicket)}
-              disabled={isLoading || isPending || (txHash && txStatus === "executed")}
+              disabled={Boolean(
+                isLoading || isPending || (txHash && txStatus === "executed")
+              )}
               className="w-full"
-              variant={txHash && txStatus === "executed" ? "outline" : "default"}
+              variant={
+                Boolean(txHash && txStatus === "executed")
+                  ? "outline"
+                  : "default"
+              }
             >
               {isLoading || isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -240,7 +271,7 @@ export function SyndicateTickets({
 
             {txHash && (
               <div className="mt-4 text-xs text-center text-white/60">
-                Transaction: {txHash.slice(0, 6)}...{txHash.slice(-4)} {" "}
+                Transaction: {txHash.slice(0, 6)}...{txHash.slice(-4)}{" "}
                 <a
                   href={`https://basescan.io/tx/${txHash}`}
                   target="_blank"
@@ -257,8 +288,14 @@ export function SyndicateTickets({
         <div className="space-y-4">
           {hasWinningTickets && (
             <div className="bg-gradient-to-r from-emerald-900/30 to-cyan-900/30 border border-emerald-500/30 rounded-md p-4 mb-4">
-              <h4 className="text-lg font-bold text-emerald-400 mb-2">🎉 Winning Tickets!</h4>
-              <p className="mb-3">You have {winningTickets.length} winning ticket{winningTickets.length !== 1 ? 's' : ''}. Claim your winnings now.</p>
+              <h4 className="text-lg font-bold text-emerald-400 mb-2">
+                🎉 Winning Tickets!
+              </h4>
+              <p className="mb-3">
+                You have {winningTickets.length} winning ticket
+                {winningTickets.length !== 1 ? "s" : ""}. Claim your winnings
+                now.
+              </p>
               <Button
                 onClick={() => handleClaimWinnings(winningTickets[0])}
                 className="w-full"
@@ -272,19 +309,32 @@ export function SyndicateTickets({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="text-left py-2 px-3 font-medium text-white/70">Ticket #</th>
-                  <th className="text-left py-2 px-3 font-medium text-white/70">Purchased</th>
-                  <th className="text-left py-2 px-3 font-medium text-white/70">Draw Date</th>
-                  <th className="text-right py-2 px-3 font-medium text-white/70">Status</th>
+                  <th className="text-left py-2 px-3 font-medium text-white/70">
+                    Ticket #
+                  </th>
+                  <th className="text-left py-2 px-3 font-medium text-white/70">
+                    Purchased
+                  </th>
+                  <th className="text-left py-2 px-3 font-medium text-white/70">
+                    Draw Date
+                  </th>
+                  <th className="text-right py-2 px-3 font-medium text-white/70">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {tickets.map((ticket) => (
-                  <tr key={ticket.id} className="border-b border-white/5 hover:bg-white/5">
+                  <tr
+                    key={ticket.id}
+                    className="border-b border-white/5 hover:bg-white/5"
+                  >
                     <td className="py-3 px-3">{ticket.id}</td>
-                    <td className="py-3 px-3">{ticket.purchaseDate.toLocaleDateString()}</td>
                     <td className="py-3 px-3">
-                      {ticket.drawDate 
+                      {ticket.purchaseDate.toLocaleDateString()}
+                    </td>
+                    <td className="py-3 px-3">
+                      {ticket.drawDate
                         ? ticket.drawDate.toLocaleDateString()
                         : "Pending"}
                     </td>

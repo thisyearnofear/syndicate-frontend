@@ -35,11 +35,11 @@ interface CrossChainTxParams {
  */
 export class CrossChainService {
   private apiBaseUrl: string;
-  
+
   constructor(apiKey = DECENT_API_KEY, apiBaseUrl = "https://box-v4.api.decent.xyz/api") {
     this.apiBaseUrl = apiBaseUrl;
   }
-  
+
   /**
    * Prepares a cross-chain transaction through Decent.xyz
    */
@@ -51,14 +51,14 @@ export class CrossChainService {
       contractAddress,
       functionSignature,
       args,
-      value = 0n,
+      value = BigInt(0),
       slippage = DEFAULT_SLIPPAGE,
     } = params;
-    
+
     // Get token addresses for source and destination chains if not provided
     const sourceTokenAddress = params.srcToken || getTokenAddress(sourceChainId, TokenType.USDC);
     const destTokenAddress = params.dstToken || getTokenAddress(destinationChainId, TokenType.USDC);
-    
+
     // Create the request to Decent API
     const requestBody = {
       actionType: "EvmFunction",
@@ -74,36 +74,36 @@ export class CrossChainService {
         cost: {
           amount: value,
           isNative: false,
-          tokenAddress: destUsdcAddress,
+          tokenAddress: destTokenAddress,
         },
         signature: functionSignature,
         args,
       },
     };
-    
+
     // Handle BigInt serialization in request
-    const serializedBody = JSON.stringify(requestBody, (_, value) => 
+    const serializedBody = JSON.stringify(requestBody, (_, value) =>
       typeof value === "bigint" ? value.toString() : value
     );
-    
+
     // Make request to Decent API
     try {
       const url = new URL(`${this.apiBaseUrl}/getBoxAction`);
       url.searchParams.set("arguments", serializedBody);
-      
+
       const response = await fetch(url.toString(), {
         method: "GET",
         headers: {
           "x-api-key": DECENT_API_KEY,
         },
       });
-      
+
       if (!response.ok) {
         throw new Error(`Decent API error: ${response.status}`);
       }
-      
+
       const text = await response.text();
-      
+
       // Parse response and handle BigInt deserialization
       const parsedResponse = JSON.parse(text, (_, value) => {
         if (typeof value === "string" && /^\d+$/.test(value)) {
@@ -115,14 +115,14 @@ export class CrossChainService {
         }
         return value;
       });
-      
+
       return parsedResponse;
     } catch (error) {
       console.error("Error preparing cross-chain transaction:", error);
       throw error;
     }
   }
-  
+
   /**
    * Check transaction status
    */
@@ -130,7 +130,7 @@ export class CrossChainService {
     const url = new URL("https://api.decentscan.xyz/getStatus");
     url.searchParams.set("chainId", sourceChainId.toString());
     url.searchParams.set("txHash", txHash);
-    
+
     try {
       const response = await fetch(url.toString(), {
         method: "GET",
@@ -138,11 +138,11 @@ export class CrossChainService {
           "x-api-key": DECENT_API_KEY,
         },
       });
-      
+
       if (!response.ok) {
         throw new Error(`Status API error: ${response.status}`);
       }
-      
+
       const data = await response.json();
       return {
         status: data.status,

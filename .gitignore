@@ -11,6 +11,11 @@
 !.yarn/versions
 node_modules/
 
+# Lock files - choose ONE package manager
+# Uncomment the lock file you DON'T want to use
+yarn.lock
+#package-lock.json
+
 # testing
 /coverage
 

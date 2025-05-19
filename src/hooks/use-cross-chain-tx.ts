@@ -15,10 +15,10 @@ export function useCrossChainTx(options: UseCrossChainTxOptions = {}) {
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
-  
+
   // Initialize service
   const crossChainService = new CrossChainService(DECENT_API_KEY);
-  
+
   // Transaction state
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -26,7 +26,7 @@ export function useCrossChainTx(options: UseCrossChainTxOptions = {}) {
   const [error, setError] = useState<Error | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<string | null>(null);
-  
+
   // Execute cross-chain transaction
   const executeTx = useCallback(async (params: {
     sourceChainId: ChainId;
@@ -42,39 +42,46 @@ export function useCrossChainTx(options: UseCrossChainTxOptions = {}) {
       options.onError?.(error);
       return null;
     }
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // Prepare the transaction
       const { tx } = await crossChainService.prepareTransaction({
         ...params,
         senderAddress: address,
       });
-      
-      // Estimate gas
-      const gas = await publicClient.estimateGas({
+
+      // Convert tx properties to the correct types
+      const txForEstimate = {
         account: address,
-        ...tx,
-      });
-      
+        to: tx.to as `0x${string}`,
+        data: tx.data as `0x${string}`,
+        value: tx.value
+      };
+
+      // Estimate gas
+      const gas = await publicClient.estimateGas(txForEstimate);
+
       setIsPending(true);
-      
+
       // Send the transaction
       const hash = await walletClient.sendTransaction({
-        ...tx,
+        to: tx.to as `0x${string}`,
+        data: tx.data as `0x${string}`,
+        value: tx.value,
         gas,
       });
-      
+
       setTxHash(hash);
       setIsSuccess(true);
       setTxStatus("processing");
       options.onSuccess?.(hash);
-      
+
       // Start polling for transaction status
       pollTransactionStatus(params.sourceChainId, hash);
-      
+
       return hash;
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
@@ -86,12 +93,12 @@ export function useCrossChainTx(options: UseCrossChainTxOptions = {}) {
       setIsPending(false);
     }
   }, [address, walletClient, publicClient, crossChainService, options]);
-  
+
   // Poll for transaction status
   const pollTransactionStatus = useCallback(async (chainId: ChainId, hash: string) => {
     const pollInterval = 10000; // 10 seconds
     const maxAttempts = 12; // 2 minutes total
-    
+
     let attempts = 0;
     const poll = async () => {
       try {
@@ -100,11 +107,11 @@ export function useCrossChainTx(options: UseCrossChainTxOptions = {}) {
           options.onStatusChange?.("timeout");
           return;
         }
-        
+
         const { status, data } = await crossChainService.getTransactionStatus(chainId, hash);
         setTxStatus(status);
         options.onStatusChange?.(status, data);
-        
+
         // If not complete, continue polling
         if (status !== "Executed" && status !== "Failed") {
           attempts++;
@@ -115,10 +122,10 @@ export function useCrossChainTx(options: UseCrossChainTxOptions = {}) {
         setTimeout(poll, pollInterval);
       }
     };
-    
+
     await poll();
   }, [crossChainService, options]);
-  
+
   return {
     executeTx,
     pollTransactionStatus,

@@ -97,22 +97,30 @@ export function AdaptedHowItWorks() {
                 Better Odds, Bigger Impact
               </h3>
               <p className="text-white/70 mb-6 text-sm">
-                Why chase the entire pie alone when you can get a generous slice
-                of an impactful win together? By pooling resources with others
-                who share your values, you dramatically increase your chances of
-                winning. Donating winnings to causes is optional but helps
-                attract more participants to your syndicate.
+                Why accept 1-in-143,000 odds alone when you can get 1-in-140 odds together? 
+                By pooling resources with others who share your values, you dramatically 
+                increase your chances of winning. A $1M jackpot means $1,000 per ticket in a 1,000-ticket 
+                syndicate — with odds 1,000× better than playing solo. Plus, supporting causes 
+                attracts more participants, further improving your odds.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="bg-black/40 rounded-lg p-4 flex-1 border border-white/10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="bg-black/40 rounded-lg p-4 border border-white/10">
                   <div className="text-3xl font-bold text-cyan-400 mb-1">
-                    1000+
+                    1000×
                   </div>
                   <div className="text-sm text-white/70">
-                    Group tickets for better odds
+                    Better odds than playing solo
                   </div>
                 </div>
-                <div className="bg-black/40 rounded-lg p-4 flex-1 border border-white/10">
+                <div className="bg-black/40 rounded-lg p-4 border border-white/10">
+                  <div className="text-3xl font-bold text-cyan-400 mb-1">
+                    $1000+
+                  </div>
+                  <div className="text-sm text-white/70">
+                    Potential win per ticket
+                  </div>
+                </div>
+                <div className="bg-black/40 rounded-lg p-4 border border-white/10 sm:col-span-2 lg:col-span-1">
                   <div className="text-3xl font-bold text-cyan-400 mb-1">
                     20%
                   </div>

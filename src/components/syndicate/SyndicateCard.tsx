@@ -15,6 +15,9 @@ import { cn } from "@/lib/utils";
 import { OptimizedImage } from "@/components/ui/utils/optimized-image";
 import { useErrorHandler } from "@/hooks/use-error-handler";
 import { SyndicateCardProps } from "@/types/syndicate";
+import { LensProfileGroup } from "@/components/lens/LensProfileGroup";
+import { LensProfileAvatar } from "@/components/lens/LensProfileAvatar";
+import { Profile } from "@/lib/lens/profiles";
 
 // Animal-themed cause icons
 const causeIcons: Record<string, string> = {
@@ -223,12 +226,36 @@ export function SyndicateCard({
               icon
             )}
           </div>
-          <Badge
-            variant="outline"
-            className="bg-white/10 backdrop-blur-sm border-white/20 text-white"
-          >
-            {syndicate.members || "0"} members
-          </Badge>
+          <div className="flex items-center gap-2">
+            {syndicate.creatorProfile ? (
+              <LensProfileAvatar 
+                profile={syndicate.creatorProfile}
+                size="xs"
+                showTooltip
+                linkToProfile
+              />
+            ) : syndicate.creatorProfileId ? (
+              <LensProfileAvatar 
+                profileId={syndicate.creatorProfileId}
+                size="xs"
+                showTooltip
+                linkToProfile
+              />
+            ) : syndicate.creatorHandle ? (
+              <LensProfileAvatar 
+                handle={syndicate.creatorHandle}
+                size="xs"
+                showTooltip
+                linkToProfile
+              />
+            ) : null}
+            <Badge
+              variant="outline"
+              className="bg-white/10 backdrop-blur-sm border-white/20 text-white"
+            >
+              {syndicate.members || "0"} members
+            </Badge>
+          </div>
         </div>
         <CardTitle className="text-lg font-bold mt-3 bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent">
           {syndicate.name}
@@ -254,6 +281,19 @@ export function SyndicateCard({
               cause
             </div>
           </div>
+          
+          {/* Lens profile group showing syndicate members */}
+          {syndicate.memberProfileIds && syndicate.memberProfileIds.length > 0 && (
+            <div className="mt-1">
+              <LensProfileGroup 
+                profileIds={syndicate.memberProfileIds} 
+                maxVisible={3}
+                avatarSize="xs"
+                overlap="-10px"
+                className="mt-2"
+              />
+            </div>
+          )}
         </div>
       </CardContent>
 

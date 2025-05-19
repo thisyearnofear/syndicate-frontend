@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/inputs/button";
 import {
   Card,
@@ -22,6 +22,11 @@ import {
 import { Badge } from "@/components/ui/data-display/badge";
 import { Progress } from "@/components/ui/feedback/progress";
 import Link from "next/link";
+import { Profile, ProfileId } from '@/lib/lens/profiles';
+import { LensProfileAvatar } from '@/components/lens/LensProfileAvatar';
+import { LensProfileGroup } from '@/components/lens/LensProfileGroup';
+import { SyndicateMember } from '@/types/syndicate';
+import { fetchLensProfilesByAddresses, formatLensHandle, getHeyProfileUrl } from '@/lib/lens/profiles';
 
 // Mock data for the dashboard
 const syndicateData = {
@@ -42,35 +47,36 @@ const syndicateData = {
     {
       id: 1,
       name: "Alex",
-      address: "0x1a2...3b4c",
+      address: "0x3182d5B9Fe22Dea8A9cf2f06312e93Dbbb67c578",
       avatar: "",
       contribution: 0.25,
+      handle: "stani.lens",
     },
     {
       id: 2,
       name: "Taylor",
-      address: "0x4d5...6e7f",
+      address: "0xC9F0a796Ea6fA819ED8C1CD13fE4f94c1Ee4f81B",
       avatar: "",
       contribution: 0.5,
     },
     {
       id: 3,
       name: "Jordan",
-      address: "0x8g9...0h1i",
+      address: "0x748FF4F3D10C284355cCc9c5e9c3eC82fa8470Cf",
       avatar: "",
       contribution: 0.15,
     },
     {
       id: 4,
       name: "Casey",
-      address: "0x2j3...4k5l",
+      address: "0x1ca30c441a8F32Cd40F5cD15277F2Bb1537cE607",
       avatar: "",
       contribution: 0.3,
     },
     {
       id: 5,
       name: "Morgan",
-      address: "0x6m7...8n9o",
+      address: "0xD7029BDEa1c16182EAA49F7DAA9d992c1B8aCf88",
       avatar: "",
       contribution: 0.2,
     },
@@ -189,6 +195,49 @@ function SyndicateStats() {
 
 // Members component
 function SyndicateMembers() {
+  const [membersWithProfiles, setMembersWithProfiles] = useState<(SyndicateMember & { profile?: Profile })[]>(syndicateData.members);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load profiles for members
+  useEffect(() => {
+    async function loadProfiles() {
+      try {
+        setIsLoading(true);
+        const addresses = syndicateData.members.map(member => member.address);
+        // Filter out dummy addresses that don't match 0x format
+        const validAddresses = addresses.filter(addr => /^0x[0-9a-fA-F]{40}$/.test(addr));
+        
+        if (validAddresses.length > 0) {
+          const profiles = await fetchLensProfilesByAddresses(validAddresses);
+          
+          // Match profiles with members
+          const updatedMembers = syndicateData.members.map(member => {
+            const matchingProfile = profiles.find(p => 
+              p.ownedBy?.some(owner => 
+                owner.toLowerCase() === member.address.toLowerCase()
+              )
+            );
+            
+            return {
+              ...member,
+              profile: matchingProfile,
+              handle: matchingProfile?.handle?.fullHandle || member.handle,
+              profileId: matchingProfile?.id
+            };
+          });
+          
+          setMembersWithProfiles(updatedMembers);
+        }
+      } catch (error) {
+        console.error('Failed to load Lens profiles:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    loadProfiles();
+  }, []);
+
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
@@ -205,23 +254,56 @@ function SyndicateMembers() {
       </div>
 
       <div className="space-y-3">
-        {syndicateData.members.map((member) => (
+        {membersWithProfiles.map((member) => (
           <div
             key={member.id}
             className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-gray-900/80 to-gray-800/80 border border-gray-800 shadow hover:shadow-lg transition"
           >
             <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 border-2 border-cyan-500/40 shadow">
-                <AvatarImage src={member.avatar} />
-                <AvatarFallback>
-                  {member.name.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              {member.profile || member.handle ? (
+                <LensProfileAvatar 
+                  profile={member.profile}
+                  handle={member.handle}
+                  address={member.address}
+                  size="md"
+                  showTooltip
+                  linkToProfile
+                  fallbackName={member.name}
+                />
+              ) : (
+                <Avatar className="h-10 w-10 border-2 border-cyan-500/40 shadow">
+                  <AvatarImage src={member.avatar} />
+                  <AvatarFallback>
+                    {member.name.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              )}
               <div>
-                <div className="font-semibold text-white">{member.name}</div>
-                <div className="text-xs text-muted-foreground font-mono">
-                  {member.address}
+                <div className="font-semibold text-white">
+                  {member.profile?.metadata?.displayName || member.name}
                 </div>
+                <div className="flex items-center gap-2">
+                  {member.handle && (
+                    <div className="text-xs text-green-400 font-mono">
+                      {formatLensHandle(member.handle)}
+                    </div>
+                  )}
+                  <div className="text-xs text-muted-foreground font-mono">
+                    {member.address.substring(0, 6)}...{member.address.substring(38)}
+                  </div>
+                </div>
+                {member.handle && (
+                  <div className="flex space-x-2 mt-1">
+                    <a 
+                      href={getHeyProfileUrl(member.handle)} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-cyan-400 hover:underline"
+                    >
+                      View on Hey.xyz
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
             <div className="text-base font-bold text-cyan-300">
@@ -336,12 +418,20 @@ export function SyndicateDashboard() {
                   <span className="text-sm text-cyan-300">
                     {syndicateData.cause.name}
                   </span>
-                  <Badge
-                    variant="outline"
-                    className="bg-gray-900/80 text-cyan-400 border-cyan-700 px-3 py-1 rounded-full font-semibold"
-                  >
-                    {syndicateData.memberCount} members
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <LensProfileGroup 
+                      addresses={syndicateData.members.map(m => m.address)}
+                      maxVisible={3}
+                      avatarSize="xs"
+                      overlap="-10px"
+                    />
+                    <Badge
+                      variant="outline"
+                      className="bg-gray-900/80 text-cyan-400 border-cyan-700 px-3 py-1 rounded-full font-semibold"
+                    >
+                      {syndicateData.memberCount} members
+                    </Badge>
+                  </div>
                 </div>
               </div>
             </div>

@@ -21,7 +21,8 @@ export function GroupTicketPower() {
             When you join a syndicate, you're not just buying a single ticket -
             you're joining forces with hundreds of others to purchase tickets in
             bulk, dramatically increasing your chances of winning. Your odds are
-            calculated as: Jackpot / (.7 × Tickets bought).
+            calculated as: Jackpot / (.7 × Tickets bought). This means your chances
+            of winning increase directly with the number of tickets your syndicate buys.
           </p>
 
           <div className="space-y-4 mb-6">
@@ -33,6 +34,9 @@ export function GroupTicketPower() {
                 <div className="text-white font-medium">Playing Solo</div>
                 <div className="text-white/70 text-sm">
                   1 ticket = 1 in ~142,857 odds ($100k jackpot)
+                </div>
+                <div className="text-orange-300/90 text-sm">
+                  Potential win: $100,000 (full jackpot)
                 </div>
               </div>
             </div>
@@ -46,12 +50,15 @@ export function GroupTicketPower() {
                   Joining a Syndicate
                 </div>
                 <div className="text-white/70 text-sm">
-                  100 tickets = 1 in ~1,428 odds
+                  100 tickets = 1 in ~1,428 odds <span className="text-green-300">→ 100× better than solo!</span>
                 </div>
                 <div className="text-white/70 text-sm">
-                  1000 tickets = 1 in ~142 odds
+                  1000 tickets = 1 in ~142 odds <span className="text-green-300">→ 1000× better than solo!</span>
                 </div>
-                <div className="text-white/70 text-sm">
+                <div className="text-orange-300/90 text-sm">
+                  Your share of a $100k win (1000 tickets): $1,000 per ticket
+                </div>
+                <div className="text-white/70 text-sm mt-1">
                   No upper limit on group ticket purchases
                 </div>
               </div>
@@ -90,6 +97,7 @@ export function GroupTicketPower() {
             <div className="mt-6 text-center">
               <div className="text-white font-medium">100 Tickets</div>
               <div className="text-white/70 text-sm">Purchased as a group</div>
+              <div className="text-xs text-cyan-300/90 mt-1">100× better odds than playing alone</div>
             </div>
 
             <div className="mt-4 p-3 bg-black/30 rounded-lg border border-white/10">
@@ -98,7 +106,7 @@ export function GroupTicketPower() {
                 <span className="text-cyan-400 font-bold">1 in ~1,428</span>
               </div>
               <div className="text-xs text-white/60 mt-1 text-center">
-                For 100 tickets in a $100,000 jackpot
+                For 100 tickets in a $100,000 jackpot = $1,000 per winning ticket
               </div>
               <div className="mt-2 w-full bg-white/10 h-2 rounded-full overflow-hidden">
                 <motion.div

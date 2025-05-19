@@ -15,7 +15,7 @@ export function useMegapotTickets(options: UseMegapotTicketsOptions = {}) {
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
-  
+
   // Transaction state
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -23,7 +23,7 @@ export function useMegapotTickets(options: UseMegapotTicketsOptions = {}) {
   const [error, setError] = useState<Error | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<string | null>(null);
-  
+
   // Purchase tickets from a Syndicate
   const purchaseTickets = useCallback(async (params: {
     ticketCount: number;
@@ -39,10 +39,10 @@ export function useMegapotTickets(options: UseMegapotTicketsOptions = {}) {
       options.onError?.(error);
       return null;
     }
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // Prepare the transaction
       const { tx } = await megapotUtils.preparePurchaseTickets({
@@ -54,29 +54,36 @@ export function useMegapotTickets(options: UseMegapotTicketsOptions = {}) {
         sourceChainId: params.sourceChainId || SOURCE_CHAIN_ID,
         destinationChainId: params.destinationChainId || DESTINATION_CHAIN_ID,
       });
-      
-      // Estimate gas
-      const gas = await publicClient.estimateGas({
+
+      // Convert tx properties to the correct types
+      const txForEstimate = {
         account: address,
-        ...tx,
-      });
-      
+        to: tx.to as `0x${string}`,
+        data: tx.data as `0x${string}`,
+        value: tx.value
+      };
+
+      // Estimate gas
+      const gas = await publicClient.estimateGas(txForEstimate);
+
       setIsPending(true);
-      
+
       // Send the transaction
       const hash = await walletClient.sendTransaction({
-        ...tx,
+        to: tx.to as `0x${string}`,
+        data: tx.data as `0x${string}`,
+        value: tx.value,
         gas,
       });
-      
+
       setTxHash(hash);
       setIsSuccess(true);
       setTxStatus("processing");
       options.onSuccess?.(hash);
-      
+
       // Start polling for transaction status
       pollTransactionStatus(params.sourceChainId || SOURCE_CHAIN_ID, hash);
-      
+
       return hash;
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
@@ -88,13 +95,13 @@ export function useMegapotTickets(options: UseMegapotTicketsOptions = {}) {
       setIsPending(false);
     }
   }, [address, walletClient, publicClient, options]);
-  
+
   // Poll for transaction status
   const pollTransactionStatus = useCallback(async (chainId: ChainId, hash: string) => {
     const pollInterval = 10000; // 10 seconds
     const maxAttempts = 12; // 2 minutes total
     const crossChainService = megapotUtils.getCrossChainService();
-    
+
     let attempts = 0;
     const poll = async () => {
       try {
@@ -103,11 +110,11 @@ export function useMegapotTickets(options: UseMegapotTicketsOptions = {}) {
           options.onStatusChange?.("timeout");
           return;
         }
-        
+
         const { status, data } = await crossChainService.getTransactionStatus(chainId, hash);
         setTxStatus(status);
         options.onStatusChange?.(status, data);
-        
+
         // If not complete, continue polling
         if (status !== "Executed" && status !== "Failed") {
           attempts++;
@@ -118,10 +125,10 @@ export function useMegapotTickets(options: UseMegapotTicketsOptions = {}) {
         setTimeout(poll, pollInterval);
       }
     };
-    
+
     await poll();
   }, [options]);
-  
+
   return {
     purchaseTickets,
     pollTransactionStatus,

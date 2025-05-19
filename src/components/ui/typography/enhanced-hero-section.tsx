@@ -141,9 +141,20 @@ export function EnhancedHeroSection() {
                 ref={subtitleRef}
                 className="text-lg md:text-xl text-white/80 max-w-xl"
               >
-                Join cause-driven lottery syndicates powered by Lens Protocol. Pool your luck, pledge your impact, and win together.
+                Join cause-driven lottery syndicates with 1000× better odds than playing solo. Pool your luck, share the rewards, and make an impact together.
               </p>
             </motion.div>
+            
+            <div className="mt-4 p-4 bg-black/30 backdrop-blur-sm rounded-xl border border-white/10 mb-6">
+              <div className="flex flex-col md:flex-row gap-3 items-start md:items-center text-sm">
+                <div className="text-green-300 font-medium whitespace-nowrap">Value Proposition:</div>
+                <ul className="list-disc pl-5 text-white/80 space-y-1">
+                  <li>1-in-143 odds with 1,000 tickets vs 1-in-143,000 solo</li>
+                  <li>$1,000 per ticket from a $1M jackpot with 1,000 tickets</li>
+                  <li>Optional cause donations attract more participants</li>
+                </ul>
+              </div>
+            </div>
             
             <div ref={buttonsRef} className="flex flex-col sm:flex-row gap-4">
               <ConnectKitButton.Custom>
@@ -205,7 +216,7 @@ export function EnhancedHeroSection() {
                       <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
                       <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
-                    Browse Syndicates
+                    Join a Syndicate
                   </span>
                 </MagneticButton>
               </Link>

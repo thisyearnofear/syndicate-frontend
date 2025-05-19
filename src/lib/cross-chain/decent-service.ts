@@ -162,7 +162,7 @@ export class DecentService {
     const totalAmountInWei = parseUnits(totalAmount.toString(), 6);
 
     // Calculate cause amount
-    const causeAmountInWei = (totalAmountInWei * BigInt(causePercentage)) / 100n;
+    const causeAmountInWei = (totalAmountInWei * BigInt(causePercentage)) / BigInt(100);
 
     // Create the transaction config
     const txConfig: BoxActionRequest = {

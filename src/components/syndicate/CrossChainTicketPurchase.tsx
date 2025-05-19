@@ -4,11 +4,11 @@ import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useCrossChain } from "@/hooks/use-cross-chain";
 import { Button } from "@/components/ui/inputs/button";
-import { Card } from "@/components/ui/layouts/card";
+import { Card } from "@/components/ui/data-display/card";
 import { Input } from "@/components/ui/inputs/input";
 import { Loader2, ArrowRight, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { 
+import {
   BASE_CHAIN_ID,
   DECENT_API_KEY,
   DEFAULT_REFERRER_ADDRESS,
@@ -16,7 +16,7 @@ import {
   MEGAPOT_CONTRACT_ADDRESS,
   SYNDICATE_REGISTRY_ADDRESS,
   USDC_ADDRESS_BASE,
-  USDC_ADDRESS_LENS 
+  USDC_ADDRESS_LENS,
 } from "@/lib/cross-chain/constants";
 
 interface CrossChainTicketPurchaseProps {
@@ -43,49 +43,44 @@ export function CrossChainTicketPurchase({
   const [isConfirming, setIsConfirming] = useState(false);
 
   // Initialize cross-chain hook
-  const { 
-    isLoading, 
-    isPending, 
-    error, 
-    txHash, 
-    txStatus, 
-    purchaseTickets 
-  } = useCrossChain({
-    apiKey: DECENT_API_KEY,
-    onSuccess: (hash) => {
-      toast.success("Transaction submitted successfully!", {
-        description: `Your tickets will be purchased soon.`,
-        action: {
-          label: "View on Explorer",
-          onClick: () => window.open(`https://basescan.io/tx/${hash}`, "_blank"),
-        },
-      });
-      
-      if (onPurchaseComplete) {
-        onPurchaseComplete(hash);
-      }
-    },
-    onError: (err) => {
-      toast.error("Transaction failed", {
-        description: err.message,
-      });
-    },
-    onStatusChange: (status, data) => {
-      if (status === "executed") {
-        toast.success("Tickets purchased successfully!", {
-          description: "Your tickets are now part of the Megapot lottery.",
+  const { isLoading, isPending, error, txHash, txStatus, purchaseTickets } =
+    useCrossChain({
+      apiKey: DECENT_API_KEY,
+      onSuccess: (hash) => {
+        toast.success("Transaction submitted successfully!", {
+          description: `Your tickets will be purchased soon.`,
+          action: {
+            label: "View on Explorer",
+            onClick: () =>
+              window.open(`https://basescan.io/tx/${hash}`, "_blank"),
+          },
         });
-      } else if (status === "failed") {
-        toast.error("Transaction execution failed", {
-          description: data?.message || "Please try again later.",
+
+        if (onPurchaseComplete) {
+          onPurchaseComplete(hash);
+        }
+      },
+      onError: (err) => {
+        toast.error("Transaction failed", {
+          description: err.message,
         });
-      }
-    },
-  });
+      },
+      onStatusChange: (status, data) => {
+        if (status === "executed") {
+          toast.success("Tickets purchased successfully!", {
+            description: "Your tickets are now part of the Megapot lottery.",
+          });
+        } else if (status === "failed") {
+          toast.error("Transaction execution failed", {
+            description: data?.message || "Please try again later.",
+          });
+        }
+      },
+    });
 
   // Calculate total cost
   const totalCost = ticketCount * ticketPriceInUSDC;
-  
+
   // Format the display of different states
   const getButtonText = () => {
     if (!isConnected) return "Connect Wallet";
@@ -134,10 +129,12 @@ export function CrossChainTicketPurchase({
   return (
     <Card className={`p-6 ${className}`}>
       <h3 className="text-xl font-bold mb-4">Purchase Tickets</h3>
-      
+
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Number of Tickets</label>
+          <label className="block text-sm font-medium mb-1">
+            Number of Tickets
+          </label>
           <div className="flex items-center">
             <Button
               type="button"
@@ -152,7 +149,9 @@ export function CrossChainTicketPurchase({
             <Input
               type="number"
               value={ticketCount}
-              onChange={(e) => setTicketCount(Math.max(1, parseInt(e.target.value) || 1))}
+              onChange={(e) =>
+                setTicketCount(Math.max(1, parseInt(e.target.value) || 1))
+              }
               className="mx-2 text-center w-20 h-9"
               min="1"
               disabled={isLoading || isPending}
@@ -187,10 +186,20 @@ export function CrossChainTicketPurchase({
 
         {isConfirming && (
           <div className="bg-cyan-900/30 border border-cyan-500/30 rounded-md p-3 text-sm">
-            <p className="font-medium text-cyan-400 mb-1">Confirm Your Purchase</p>
-            <p className="mb-2">You are buying {ticketCount} ticket{ticketCount !== 1 ? "s" : ""} for ${totalCost.toFixed(2)} USDC.</p>
-            <p className="mb-1"><strong>{causePercentage}%</strong> of any winnings will go to <strong>{causeName}</strong>.</p>
-            <p className="text-xs text-white/60">This is a cross-chain transaction from Lens Chain to Base Chain.</p>
+            <p className="font-medium text-cyan-400 mb-1">
+              Confirm Your Purchase
+            </p>
+            <p className="mb-2">
+              You are buying {ticketCount} ticket{ticketCount !== 1 ? "s" : ""}{" "}
+              for ${totalCost.toFixed(2)} USDC.
+            </p>
+            <p className="mb-1">
+              <strong>{causePercentage}%</strong> of any winnings will go to{" "}
+              <strong>{causeName}</strong>.
+            </p>
+            <p className="text-xs text-white/60">
+              This is a cross-chain transaction from Lens Chain to Base Chain.
+            </p>
           </div>
         )}
 
@@ -206,9 +215,13 @@ export function CrossChainTicketPurchase({
 
         <Button
           onClick={handlePurchase}
-          disabled={isLoading || isPending || (txHash && txStatus === "executed")}
+          disabled={Boolean(
+            isLoading || isPending || (txHash && txStatus === "executed")
+          )}
           className="w-full"
-          variant={txHash && txStatus === "executed" ? "outline" : "default"}
+          variant={
+            Boolean(txHash && txStatus === "executed") ? "outline" : "default"
+          }
         >
           {isLoading || isPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -222,7 +235,7 @@ export function CrossChainTicketPurchase({
 
         {txHash && (
           <div className="text-xs text-center text-white/60">
-            Transaction: {txHash.slice(0, 6)}...{txHash.slice(-4)} {" "}
+            Transaction: {txHash.slice(0, 6)}...{txHash.slice(-4)}{" "}
             <a
               href={`https://basescan.io/tx/${txHash}`}
               target="_blank"

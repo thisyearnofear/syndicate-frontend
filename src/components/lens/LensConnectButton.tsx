@@ -48,76 +48,70 @@ export function LensConnectButton({
   
   return (
     <div className="flex items-center gap-2">
-      {/* First show the wallet connection button */}
-      <ConnectKitButton.Custom>
-        {({ isConnected, show, truncatedAddress, ensName }) => (
+      {/* Combined wallet and Lens connection button */}
+      {isAuthenticated ? (
+        <LensProfileDropdown>
           <Button
-            onClick={show}
-            size={size}
-            variant="outline"
-            className={cn("whitespace-nowrap", className)}
-          >
-            {isConnected ? `${ensName || truncatedAddress}` : "Connect Wallet"}
-          </Button>
-        )}
-      </ConnectKitButton.Custom>
-
-      {/* Then show the Lens authentication button if wallet is connected */}
-      {isConnected && (
-        isAuthenticated ? (
-          <LensProfileDropdown>
-            <Button
-              size={size}
-              variant={variant}
-              className={cn(
-                "relative group whitespace-nowrap",
-                "bg-green-600 hover:bg-green-700",
-                className
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <div className="relative w-5 h-5">
-                  <Image
-                    src="/lens-logo.svg"
-                    alt="Lens Protocol"
-                    width={20}
-                    height={20}
-                    className="rounded-full"
-                  />
-                </div>
-                <span>Lens Connected</span>
-              </div>
-            </Button>
-          </LensProfileDropdown>
-        ) : (
-          <Button
-            onClick={handleLensConnect}
             size={size}
             variant={variant}
-            disabled={isLoading}
             className={cn(
-              "relative group whitespace-nowrap",
+              "whitespace-nowrap",
+              "bg-green-600 hover:bg-green-700",
               className
             )}
           >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Connecting...
-              </>
-            ) : hasError ? (
-              <>
-                <AlertCircle className="mr-2 h-4 w-4" />
-                Retry Connection
-              </>
-            ) : (
-              <>
-                <LogIn className="mr-2 h-4 w-4" />
-                Connect Lens
-              </>
-            )}
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <Image
+                  src="/lens-logo.svg"
+                  alt="Lens Protocol"
+                  width={16}
+                  height={16}
+                  className="rounded-full"
+                />
+              </div>
+              <span>{address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connected'}</span>
+            </div>
           </Button>
-        )
+        </LensProfileDropdown>
+      ) : isConnected ? (
+        <Button
+          onClick={handleLensConnect}
+          size={size}
+          variant={variant}
+          disabled={isLoading}
+          className={cn("whitespace-nowrap", className)}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Connecting...
+            </>
+          ) : hasError ? (
+            <>
+              <AlertCircle className="mr-2 h-4 w-4" />
+              Retry
+            </>
+          ) : (
+            <>
+              <LogIn className="mr-2 h-4 w-4" />
+              Connect Lens
+            </>
+          )}
+        </Button>
+      ) : (
+        <ConnectKitButton.Custom>
+          {({ show }) => (
+            <Button
+              onClick={show}
+              size={size}
+              variant={variant}
+              className={cn("whitespace-nowrap", className)}
+            >
+              Connect Wallet
+            </Button>
+          )}
+        </ConnectKitButton.Custom>
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 import "./globals.css";
 import { Providers } from "@/components/web3/Providers";
+import { Header } from "@/components/layout";
 
 export const metadata = {
   title: "Syndicate - Win Together, Impact Together",
@@ -31,6 +32,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased m-0 p-0 min-h-screen bg-black text-white">
         <Providers>
+          <Header />
           <main className="flex flex-col items-center w-full">{children}</main>
         </Providers>
       </body>

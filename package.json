@@ -12,6 +12,8 @@
     "clean": "rm -rf .next && rm -rf node_modules/.cache"
   },
   "dependencies": {
+    "@across-protocol/app-sdk": "^0.2.2",
+    "@across-protocol/sdk-v2": "^0.24.4",
     "@coordinationlabs/megapot-ui-kit": "^0.0.47",
     "@decent.xyz/box-common": "^5.1.5",
     "@decent.xyz/box-hooks": "^5.1.5",
@@ -20,6 +22,7 @@
     "@lens-chain/sdk": "canary",
     "@lens-protocol/client": "canary",
     "@lens-protocol/react": "canary",
+    "@lens-protocol/metadata": "canary",
     "@radix-ui/react-accordion": "^1.2.7",
     "@radix-ui/react-alert-dialog": "^1.1.10",
     "@radix-ui/react-aspect-ratio": "^1.1.4",
@@ -61,6 +64,7 @@
     "dotenv": "^16.5.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.12.1",
+    "graphql-request": "^6.1.0",
     "gsap": "^3.13.0",
     "input-otp": "^1.4.2",
     "install": "^0.13.0",
@@ -94,7 +98,16 @@
     "@types/react": "^18.3.7",
     "@types/react-dom": "^18.3.7",
     "autoprefixer": "^10.4.21",
+    "browserify-zlib": "^0.2.0",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.1",
+    "https-browserify": "^1.0.0",
+    "os-browserify": "^0.3.0",
+    "path-browserify": "^1.0.1",
     "postcss": "^8.4.35",
+    "process": "^0.11.10",
+    "stream-browserify": "^3.0.0",
+    "stream-http": "^3.2.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.8.3"
   }

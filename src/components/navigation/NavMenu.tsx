@@ -4,7 +4,6 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/inputs/button";
-import { LensConnectButton } from "@/components/lens";
 
 export function NavMenu() {
   const pathname = usePathname();
@@ -14,7 +13,7 @@ export function NavMenu() {
   };
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-4 z-20 relative">
       <nav className="hidden md:flex items-center gap-6 mr-4">
         <Link
           href="/"
@@ -48,18 +47,22 @@ export function NavMenu() {
         </Link>
       </nav>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 relative">
         <Link href="/create">
           <Button variant="outline" size="sm" className="hidden md:inline-flex">
             Create Syndicate
           </Button>
         </Link>
 
-        <LensConnectButton 
-          variant="default"
-          size="sm"
-          className="bg-[#00bcd4] hover:bg-[#0097a7] text-white"
-        />
+        <Link href="/megapot">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="hidden md:inline-flex"
+          >
+            Megapot Jackpots
+          </Button>
+        </Link>
       </div>
     </div>
   );

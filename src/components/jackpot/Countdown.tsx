@@ -6,13 +6,17 @@ import { useTimeRemaining } from "@/lib/jackpot-queries";
 import { formatTime } from "@/lib/jackpot-utils";
 
 export function Countdown() {
-  const { data: timeRemaining = 86400, isLoading } = useTimeRemaining();
+  const timeRemainingQuery = useTimeRemaining();
+  const timeRemaining = timeRemainingQuery?.data ?? 86400;
+  const isLoading = timeRemainingQuery?.isLoading ?? false;
   const [displayTime, setDisplayTime] = useState("--:--:--");
   const startTimeRef = useRef<number>(Date.now());
   const initialTimeRef = useRef<number | null>(null);
 
   // Update the formatted time every second
   useEffect(() => {
+    if (timeRemaining === undefined) return;
+    
     // Store initial time value when it first loads
     const validTimeRemaining = typeof timeRemaining === "number" && !isNaN(timeRemaining) && timeRemaining > 0
       ? timeRemaining

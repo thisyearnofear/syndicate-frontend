@@ -2,24 +2,34 @@
 
 import { Button } from "@/components/ui/inputs/button";
 import { DialogTrigger } from "@/components/ui/overlay/dialog";
-import { useAuthenticatedUser } from "@lens-protocol/react";
 import { ConnectKitButton } from "connectkit";
 import { useState } from "react";
 import { AccountSelector } from "./AccountSelector";
 
 export function Login() {
   const [showAccountSelector, setShowAccountSelector] = useState(false);
-  const { data: authenticatedUser, loading: authUserLoading } = useAuthenticatedUser();
+  const [authenticatedUser, setAuthenticatedUser] = useState<{
+    address: string;
+  } | null>(null);
 
   return (
     <div className="p-2 space-y-2 mb-2 w-full flex flex-col items-center">
       <ConnectKitButton.Custom>
-        {({ isConnected: isWalletConnected, show, truncatedAddress, ensName, chain }) => {
+        {({
+          isConnected: isWalletConnected,
+          show,
+          truncatedAddress,
+          ensName,
+          chain,
+        }) => {
           const connectKitDisplayName = ensName ?? truncatedAddress;
 
           if (!isWalletConnected) {
             return (
-              <Button onClick={show} className="w-full px-6 py-3 rounded-full bg-[#00bcd4] text-white font-bold text-lg shadow hover:bg-[#0097a7] transition">
+              <Button
+                onClick={show}
+                className="w-full px-6 py-3 rounded-full bg-[#00bcd4] text-white font-bold text-lg shadow hover:bg-[#0097a7] transition"
+              >
                 🧑‍🤝‍🧑 Continue with Family Wallet
               </Button>
             );
@@ -30,6 +40,11 @@ export function Login() {
               <AccountSelector
                 open={showAccountSelector}
                 onOpenChange={setShowAccountSelector}
+                onSuccess={(account) => {
+                  if (account) {
+                    setAuthenticatedUser({ address: account.address });
+                  }
+                }}
                 trigger={
                   <DialogTrigger asChild>
                     <Button className="w-full px-6 py-3 rounded-full bg-[#43a047] text-white font-bold text-lg shadow hover:bg-[#388e3c] transition">
@@ -45,15 +60,26 @@ export function Login() {
             const displayIdentity = connectKitDisplayName ?? "...";
             return (
               <div className="flex flex-col items-center gap-2 w-full">
-                <span className="text-muted-foreground truncate text-center" title={authenticatedUser.address}>
-                  <span className="text-primary font-semibold">Welcome, {displayIdentity}!</span>
+                <span
+                  className="text-muted-foreground truncate text-center"
+                  title={authenticatedUser.address}
+                >
+                  <span className="text-primary font-semibold">
+                    Welcome, {displayIdentity}!
+                  </span>
                 </span>
-                <span className="text-xs text-[#888]">You're connected and ready to join a Syndicate.</span>
+                <span className="text-xs text-[#888]">
+                  You're connected and ready to join a Syndicate.
+                </span>
               </div>
             );
           }
 
-          return <p className="text-xs text-muted-foreground text-center">Checking wallet status...</p>;
+          return (
+            <p className="text-xs text-muted-foreground text-center">
+              Checking wallet status...
+            </p>
+          );
         }}
       </ConnectKitButton.Custom>
     </div>

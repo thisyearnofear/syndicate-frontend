@@ -2,15 +2,21 @@ import { SyndicateHome } from "@/components/syndicate/SyndicateHome";
 import { getLensClient } from "@/lib/lens/client";
 
 async function getAuthenticatedAccount() {
-  const client = await getLensClient();
-  if (!client.isSessionClient()) return null;
-  const authenticatedUser = client.getAuthenticatedUser().unwrapOr(null);
-  if (!authenticatedUser) return null;
+  try {
+    const client = await getLensClient();
 
-  // Just return the authenticated user info
-  return {
-    address: authenticatedUser.address,
-  };
+    // Just check if authenticated and return a simple object
+    const isAuthenticated = await client.authentication.isAuthenticated();
+    if (!isAuthenticated) return null;
+
+    // Return a simple object without trying to access specific properties
+    return {
+      authenticated: true,
+    };
+  } catch (error) {
+    console.error("Error getting authenticated account:", error);
+    return null;
+  }
 }
 
 export default async function Home() {

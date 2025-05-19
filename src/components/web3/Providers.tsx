@@ -1,14 +1,12 @@
 "use client";
 
 import { getPublicClient, updateActiveChain } from "@/lib/lens/client";
-import { LensProvider } from "@lens-protocol/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
-import React, { JSX, useEffect } from "react";
+import React, { useEffect } from "react";
 import { createConfig, http, WagmiProvider, useChainId } from "wagmi";
 import { ThemeProvider } from "next-themes";
 import { DecentProvider } from "./DecentProvider";
-import { LensAuthProvider } from "@/components/lens";
 import {
   lensMainnet,
   lensTestnet,
@@ -109,11 +107,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <ConnectKitProvider>
             <WalletProvider>
               <ChainSynchronizer />
-              <LensProvider client={publicClient}>
-                <LensAuthProvider autoConnect={true}>
-                  <DecentProvider>{children}</DecentProvider>
-                </LensAuthProvider>
-              </LensProvider>
+              <DecentProvider>{children}</DecentProvider>
             </WalletProvider>
           </ConnectKitProvider>
         </QueryClientProvider>

@@ -10,8 +10,9 @@
     "lint": "biome lint --write src",
     "check": "biome check --write src",
     "clean": "rm -rf .next && rm -rf node_modules/.cache",
-    "vercel-build": "npm install --legacy-peer-deps && next build",
-    "install": "npm install --legacy-peer-deps"
+    "fix-deps": "node scripts/fix-dependencies.js",
+    "vercel-build": "node scripts/fix-dependencies.js && npm install --legacy-peer-deps && next build",
+    "install": "node scripts/fix-dependencies.js && npm install --legacy-peer-deps"
   },
   "dependencies": {
     "@across-protocol/app-sdk": "^0.2.2",
@@ -21,10 +22,10 @@
     "@decent.xyz/box-hooks": "^5.1.5",
     "@decent.xyz/box-ui": "^5.1.5",
     "@hookform/resolvers": "^5.0.1",
-    "@lens-chain/sdk": "canary",
-    "@lens-protocol/client": "canary",
-    "@lens-protocol/react": "canary",
-    "@lens-protocol/metadata": "canary",
+    "@lens-chain/sdk": "^1.0.3",
+    "@lens-protocol/client": "^2.0.0",
+    "@lens-protocol/react": "^2.3.2",
+    "@lens-protocol/metadata": "^2.0.0",
     "@radix-ui/react-accordion": "^1.2.7",
     "@radix-ui/react-alert-dialog": "^1.1.10",
     "@radix-ui/react-aspect-ratio": "^1.1.4",
@@ -112,5 +113,11 @@
     "stream-http": "^3.2.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.8.3"
+  },
+  "resolutions": {
+    "styled-components": "^5.3.11"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }

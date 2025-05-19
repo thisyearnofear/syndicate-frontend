@@ -1,0 +1,12 @@
+# Ignore everything except specific files
+*
+!package.json
+!.nvmrc
+!.node-version
+!vercel.json
+!scripts/
+!src/
+!public/
+!next.config.js
+!tsconfig.json
+!.npmrc

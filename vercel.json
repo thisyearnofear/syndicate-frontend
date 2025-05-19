@@ -5,6 +5,5 @@
   "framework": "nextjs",
   "env": {
     "NODE_OPTIONS": "--max_old_space_size=4096"
-  },
-  "nodeVersion": "20.11.1"
+  }
 }

@@ -1,25 +1,47 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * API route that safely checks if certain environment variables exist
  * without exposing their actual values (for security)
  */
 export async function GET(request: NextRequest) {
-  // List of server-side environment variables to check
-  const privateEnvVars = [
-    'AUTH_BACKEND_URL',
-    'SHARED_SECRET',
-    'PRIVATE_KEY'
+  // For security, only check existence of sensitive variables, don't return values
+  const sensitiveVars = ["AUTH_BACKEND_SECRET", "SHARED_SECRET", "PRIVATE_KEY"];
+  const sensitiveCheck = sensitiveVars.reduce((acc, key) => {
+    acc[key] = !!process.env[key];
+    return acc;
+  }, {} as Record<string, boolean>);
+
+  // For public variables, return safe parts of the values
+  const publicVars = [
+    "NEXT_PUBLIC_APP_URL",
+    "NEXT_PUBLIC_ENVIRONMENT",
+    "NEXT_PUBLIC_APP_ADDRESS",
+    "NEXT_PUBLIC_LENS_MAINNET_RPC_URL",
+    "NEXT_PUBLIC_LENS_TESTNET_RPC_URL",
+    "NEXT_PUBLIC_BASE_CHAIN_RPC_URL",
+    "NEXT_PUBLIC_DECENT_API_KEY",
+    "NODE_ENV",
   ];
 
-  // Create an object with environment variables presence (true/false)
-  // without exposing the actual values
-  const result: Record<string, boolean> = {};
-  
-  privateEnvVars.forEach(varName => {
-    result[varName] = typeof process.env[varName] === 'string' && 
-                     process.env[varName]!.length > 0;
-  });
+  const publicValues = publicVars.reduce((acc, key) => {
+    const value = process.env[key];
 
-  return NextResponse.json(result);
+    // For API keys, mask the actual value but show if it exists
+    if (key.includes("KEY") || key.includes("SECRET")) {
+      acc[key] = value ? "[HIDDEN]" : null;
+    } else {
+      acc[key] = value || null;
+    }
+
+    return acc;
+  }, {} as Record<string, string | null>);
+
+  return NextResponse.json({
+    ...sensitiveCheck,
+    ...publicValues,
+    serverTime: new Date().toISOString(),
+    nodePlatform: process.platform,
+    nodeVersion: process.version,
+  });
 }

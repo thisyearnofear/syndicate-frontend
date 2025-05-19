@@ -1,167 +1,85 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/data-display/card';
-import { Button } from '@/components/ui/inputs/button';
-import Link from 'next/link';
-import { ArrowLeftIcon, RefreshCwIcon } from 'lucide-react';
+import { useEffect, useState } from "react";
 
 export default function EnvDebugPage() {
-  const [envVars, setEnvVars] = useState<{[key: string]: string | undefined}>({});
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Function to safely check if an environment variable is defined
-  const checkEnvVar = (name: string): [string, string, boolean] => {
-    // The value will always be a string or undefined in the browser
-    const value = process.env[`NEXT_PUBLIC_${name}`];
-    const status = value ? "✅ Available" : "❌ Missing";
-    const isDefined = !!value;
-    
-    // Return masked value for sensitive values
-    if (name.includes('SECRET') || name.includes('KEY')) {
-      return [name, status, isDefined];
-    }
-    
-    return [name, value || "Not defined", isDefined];
-  };
-
-  const fetchEnvVars = async () => {
-    setIsLoading(true);
-    try {
-      // Client-side environment variables
-      const vars: {[key: string]: string | undefined} = {};
-      
-      // Check common Lens-related variables
-      const environmentVars = [
-        'AUTH_BACKEND_URL',
-        'AUTH_BACKEND_SECRET',
-        'NEXT_PUBLIC_AUTH_BACKEND_URL',
-        'NEXT_PUBLIC_AUTH_BACKEND_SECRET',
-        'SHARED_SECRET',
-        'NEXT_PUBLIC_APP_ADDRESS',
-        'NEXT_PUBLIC_ENVIRONMENT',
-        'NEXT_PUBLIC_APP_URL',
-        'NEXT_PUBLIC_DECENT_API_KEY',
-        'NEXT_PUBLIC_LENS_CHAIN_RPC_URL',
-        'NEXT_PUBLIC_BASE_CHAIN_RPC_URL'
-      ];
-
-      // Process each environment variable
-      environmentVars.forEach(varName => {
-        const publicVarName = varName.startsWith('NEXT_PUBLIC_') 
-          ? varName 
-          : `NEXT_PUBLIC_${varName}`;
-        vars[varName] = process.env[publicVarName];
-      });
-
-      // Check API route for private variables (only presence check)
-      const response = await fetch('/api/env-check');
-      if (response.ok) {
-        const data = await response.json();
-        Object.keys(data).forEach(key => {
-          vars[key] = data[key] ? "✅ Available on server" : "❌ Missing on server";
-        });
-      }
-
-      setEnvVars(vars);
-    } catch (error) {
-      console.error('Error fetching environment variables:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [windowEnv, setWindowEnv] = useState<Record<string, any>>({});
+  const [processEnv, setProcessEnv] = useState<Record<string, any>>({});
 
   useEffect(() => {
-    fetchEnvVars();
+    // Capture window.__ENV if it exists
+    if (typeof window !== "undefined") {
+      const envFromWindow = (window as any).__ENV || {};
+      setWindowEnv(envFromWindow);
+    }
+
+    // Direct process.env access
+    const env: Record<string, any> = {};
+    // List all expected environment variables
+    const envVars = [
+      "NEXT_PUBLIC_APP_URL",
+      "NEXT_PUBLIC_ENVIRONMENT",
+      "NEXT_PUBLIC_LENS_MAINNET_RPC_URL",
+      "NEXT_PUBLIC_LENS_TESTNET_RPC_URL",
+      "NEXT_PUBLIC_BASE_CHAIN_RPC_URL",
+      "NEXT_PUBLIC_APP_ADDRESS",
+      "NEXT_PUBLIC_DECENT_API_KEY",
+    ];
+
+    envVars.forEach((key) => {
+      env[key] = process.env[key] || "not set";
+    });
+
+    setProcessEnv(env);
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <Link href="/">
-          <Button variant="outline" size="sm">
-            <ArrowLeftIcon className="w-4 h-4 mr-2" />
-            Back to Home
-          </Button>
-        </Link>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Environment Debug</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded">
+          <h2 className="text-xl font-semibold mb-2">
+            Runtime process.env Values
+          </h2>
+          <pre className="text-sm bg-gray-200 dark:bg-gray-700 p-2 rounded overflow-x-auto">
+            {JSON.stringify(processEnv, null, 2)}
+          </pre>
+        </div>
+
+        <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded">
+          <h2 className="text-xl font-semibold mb-2">Window.__ENV Values</h2>
+          <pre className="text-sm bg-gray-200 dark:bg-gray-700 p-2 rounded overflow-x-auto">
+            {JSON.stringify(windowEnv, null, 2)}
+          </pre>
+        </div>
       </div>
 
-      <h1 className="text-3xl font-bold mb-8 text-center">Environment Variables Debug</h1>
-      
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Client-Side Environment</CardTitle>
-          <CardDescription>
-            Variables available in the browser (must have NEXT_PUBLIC_ prefix)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-end mb-4">
-            <Button 
-              onClick={fetchEnvVars} 
-              disabled={isLoading}
-              size="sm"
-              variant="outline"
+      <div className="mt-4 bg-gray-100 dark:bg-gray-800 p-4 rounded">
+        <h2 className="text-xl font-semibold mb-2">Direct Runtime Check</h2>
+        <div className="grid grid-cols-1 gap-2">
+          {Object.entries(processEnv).map(([key, value]) => (
+            <div
+              key={key}
+              className="flex flex-col sm:flex-row sm:items-center"
             >
-              {isLoading ? (
-                <>
-                  <RefreshCwIcon className="w-4 h-4 mr-2 animate-spin" />
-                  Refreshing...
-                </>
-              ) : (
-                <>
-                  <RefreshCwIcon className="w-4 h-4 mr-2" />
-                  Refresh
-                </>
-              )}
-            </Button>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-100 dark:bg-gray-800">
-                  <th className="border px-4 py-2 text-left">Variable Name</th>
-                  <th className="border px-4 py-2 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(envVars).map(([key, value]) => (
-                  <tr key={key} className="border-b">
-                    <td className="border px-4 py-2 font-mono text-sm">{key}</td>
-                    <td className={`border px-4 py-2 ${value?.includes('✅') ? 'text-green-500' : value?.includes('❌') ? 'text-red-500' : ''}`}>
-                      {value || 'Not defined'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="bg-yellow-100 dark:bg-yellow-900/30 p-4 rounded-md mb-8">
-        <h2 className="text-lg font-semibold mb-2">Important Notes</h2>
-        <ul className="list-disc list-inside space-y-2">
-          <li>
-            <span className="font-medium">NEXT_PUBLIC_</span> variables are exposed to the browser 
-            and should <span className="font-bold">never</span> contain secrets
-          </li>
-          <li>
-            Server-side variables (without NEXT_PUBLIC_ prefix) are not visible here
-            but can be checked for existence via the API
-          </li>
-          <li>
-            For security, actual values of secrets are not shown, only whether they exist
-          </li>
-          <li>
-            After changing environment variables, you need to restart the Next.js server
-          </li>
-        </ul>
+              <span className="font-mono text-sm sm:w-96">{key}:</span>
+              <span className="ml-2 text-sm font-mono bg-gray-200 dark:bg-gray-700 p-1 rounded">
+                {typeof value === "string" ? value : JSON.stringify(value)}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="text-center text-sm text-gray-500 mt-8">
-        <p>This tool is for debugging purposes only and should not be deployed to production.</p>
+      <div className="mt-8">
+        <p>
+          Visit{" "}
+          <a href="/api/env-check" className="text-blue-500 underline">
+            /api/env-check
+          </a>{" "}
+          to see server-side environment variables.
+        </p>
       </div>
     </div>
   );

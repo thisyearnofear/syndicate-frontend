@@ -3,14 +3,19 @@ const nextConfig = {
   reactStrictMode: true,
   // Enhanced image configuration
   images: {
-    domains: [
-      "syndicate-lens.vercel.app",
-      "localhost",
-      "lens.xyz",
-      "ipfs.io",
-      "arweave.net",
-      "cloudflare-ipfs.com",
-      "gateway.ipfs.io",
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.lens.xyz",
+      },
+      {
+        protocol: "https",
+        hostname: "**.arweave.net",
+      },
+      {
+        protocol: "https",
+        hostname: "**.ipfs.dweb.link",
+      },
     ],
     // Image optimization settings
     formats: ["image/avif", "image/webp"],
@@ -54,6 +59,7 @@ const nextConfig = {
     "@lens-protocol/react",
     "@lens-protocol/client",
     "@lens-chain/sdk",
+    "ui",
   ],
   // Webpack configuration for code splitting
   webpack: (config, { isServer }) => {
@@ -104,6 +110,23 @@ const nextConfig = {
     }
 
     return config;
+  },
+  // For Netlify - needed to create routes via redirects
+  trailingSlash: false,
+  // Allow browser to access environment variables during runtime
+  // This is needed for our environment variable debug
+  env: {
+    NEXT_PUBLIC_APP_URL:
+      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    NEXT_PUBLIC_ENVIRONMENT:
+      process.env.NEXT_PUBLIC_ENVIRONMENT || "development",
+    NEXT_PUBLIC_LENS_MAINNET_RPC_URL:
+      process.env.NEXT_PUBLIC_LENS_MAINNET_RPC_URL || "https://rpc.lens.xyz",
+    NEXT_PUBLIC_LENS_TESTNET_RPC_URL:
+      process.env.NEXT_PUBLIC_LENS_TESTNET_RPC_URL ||
+      "https://rpc.testnet.lens.xyz",
+    NEXT_PUBLIC_BASE_CHAIN_RPC_URL:
+      process.env.NEXT_PUBLIC_BASE_CHAIN_RPC_URL || "https://mainnet.base.org",
   },
 };
 

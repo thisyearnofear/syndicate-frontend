@@ -14,15 +14,29 @@ import {
 const isServer = typeof window === "undefined";
 const isStaticGeneration = process.env.NEXT_PHASE === "phase-production-build";
 
-// Safe access to environment variables
+// Safe access to environment variables with browser-side checks
 const getEnvVar = (name: string, fallback: string = ""): string => {
+  // For client-side, check if window.__ENV is available (this will be injected by Next.js)
+  if (
+    typeof window !== "undefined" &&
+    typeof (window as any).__ENV === "object" &&
+    (window as any).__ENV[name]
+  ) {
+    return (window as any).__ENV[name];
+  }
+
+  // Then try process.env (works during build and on server)
   return typeof process !== "undefined" && process.env
     ? process.env[name] || fallback
     : fallback;
 };
 
-const APP_URL = getEnvVar("NEXT_PUBLIC_APP_URL", "http://localhost:3000");
-const ENV = getEnvVar("NEXT_PUBLIC_ENVIRONMENT", "development");
+// Force read environment variables directly from process.env to avoid caching issues
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const ENV = process.env.NEXT_PUBLIC_ENVIRONMENT || "development";
+
+console.log(`[Runtime] Direct env check - APP_URL: ${APP_URL}`);
+console.log(`[Runtime] Direct env check - ENV: ${ENV}`);
 
 // Check if we should use testnet based on environment
 const defaultIsTestnet = ENV === "development" || ENV === "testnet";

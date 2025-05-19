@@ -4,15 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/fix-dependencies.js || echo 'Continuing without fix-dependencies.js'",
     "build": "next build",
     "start": "next start",
     "format": "biome format --write src",
     "lint": "biome lint --write src",
     "check": "biome check --write src",
-    "clean": "rm -rf .next && rm -rf node_modules/.cache",
-    "fix-deps": "node scripts/fix-dependencies.js",
-    "vercel-build": "node scripts/fix-dependencies.js && npm install --legacy-peer-deps && next build",
-    "install": "node scripts/fix-dependencies.js && npm install --legacy-peer-deps"
+    "clean": "rm -rf .next && rm -rf node_modules/.cache"
   },
   "dependencies": {
     "@across-protocol/app-sdk": "^0.2.2",

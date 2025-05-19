@@ -12,6 +12,7 @@ import {
 } from "../wagmi-chains";
 
 const isServer = typeof window === "undefined";
+const isStaticGeneration = process.env.NEXT_PHASE === "phase-production-build";
 
 // Safe access to environment variables
 const getEnvVar = (name: string, fallback: string = ""): string => {
@@ -63,11 +64,31 @@ console.log(`Default chain: ${activeChain.name} (ID: ${activeChain.id})`);
 console.log(`Default RPC URL: ${activeRpcUrl}`);
 console.log(`Will adapt to wallet connection when available`);
 
-// Lens Protocol client - environment-aware with runtime updates
-const publicClient = new LensClient({
-  environment: defaultIsTestnet ? development : production,
-  storage: isServer ? cookieStorage : clientCookieStorage,
-});
+// Don't create the client during static generation
+let publicClient: LensClient | null = null;
+
+// Lazy initialize client to avoid SSG issues with cookies
+const getOrCreatePublicClient = () => {
+  // If we're in static generation, return a mock client for SSG
+  if (isStaticGeneration) {
+    // Return a minimal mock during static generation
+    return {
+      authentication: {
+        isAuthenticated: async () => false,
+      },
+    } as unknown as LensClient;
+  }
+
+  // Initialize the client if it doesn't exist yet
+  if (!publicClient) {
+    publicClient = new LensClient({
+      environment: defaultIsTestnet ? development : production,
+      storage: isServer ? cookieStorage : clientCookieStorage,
+    });
+  }
+
+  return publicClient;
+};
 
 // Function to get the current viem public client based on active chain
 export const getCurrentViemPublicClient = () => {
@@ -120,7 +141,7 @@ export const createLensTestnetWalletClient = (account?: `0x${string}`) => {
 // Legacy Lens Protocol client exports
 export const getPublicClient = () => {
   console.log("Getting public Lens client");
-  return publicClient;
+  return getOrCreatePublicClient();
 };
 
 export const getBuilderClient = async (
@@ -145,7 +166,7 @@ export const getBuilderClient = async (
     console.log(`Would authenticate with signature: ${mockSignature}`);
 
     console.log("Lens authentication successful");
-    return publicClient;
+    return getOrCreatePublicClient();
   } catch (error) {
     console.error("Failed to get builder client:", error);
     throw error;
@@ -154,21 +175,33 @@ export const getBuilderClient = async (
 
 export const getLensClient = async () => {
   try {
-    console.log("Attempting to resume Lens session");
-
-    // Check if the client is authenticated
-    const isAuthenticated = await publicClient.authentication.isAuthenticated();
-
-    if (!isAuthenticated) {
-      console.log("No active Lens session found, returning public client");
-      return publicClient;
+    // Skip session check during static generation
+    if (isStaticGeneration) {
+      console.log("Static generation detected, returning basic client");
+      return getOrCreatePublicClient();
     }
 
-    console.log("Lens session resumed successfully");
-    return publicClient;
+    console.log("Attempting to resume Lens session");
+
+    try {
+      // Check if the client is authenticated
+      const client = getOrCreatePublicClient();
+      const isAuthenticated = await client.authentication.isAuthenticated();
+
+      if (!isAuthenticated) {
+        console.log("No active Lens session found, returning public client");
+      } else {
+        console.log("Lens session resumed successfully");
+      }
+
+      return client;
+    } catch (error) {
+      console.error("Error checking authentication:", error);
+      return getOrCreatePublicClient();
+    }
   } catch (error) {
     console.error("Error in getLensClient:", error);
     console.log("Returning public client due to error");
-    return publicClient;
+    return getOrCreatePublicClient();
   }
 };

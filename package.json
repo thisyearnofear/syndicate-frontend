@@ -9,7 +9,9 @@
     "format": "biome format --write src",
     "lint": "biome lint --write src",
     "check": "biome check --write src",
-    "clean": "rm -rf .next && rm -rf node_modules/.cache"
+    "clean": "rm -rf .next && rm -rf node_modules/.cache",
+    "vercel-build": "npm install --legacy-peer-deps && next build",
+    "install": "npm install --legacy-peer-deps"
   },
   "dependencies": {
     "@across-protocol/app-sdk": "^0.2.2",

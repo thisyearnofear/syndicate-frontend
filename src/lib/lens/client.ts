@@ -22,7 +22,10 @@ const getEnvVar = (name: string, fallback: string = ""): string => {
 
 const APP_URL = getEnvVar("NEXT_PUBLIC_APP_URL", "http://localhost:3000");
 const ENV = getEnvVar("NEXT_PUBLIC_ENVIRONMENT", "development");
-const defaultIsTestnet = ENV === "development";
+
+// Check if we should use testnet based on environment
+const defaultIsTestnet = ENV === "development" || ENV === "testnet";
+const isProductionOrMainnet = ENV === "production" || ENV === "mainnet";
 
 // Get the appropriate RPC URLs from environment variables or defaults
 const MAINNET_RPC_URL = getEnvVar(

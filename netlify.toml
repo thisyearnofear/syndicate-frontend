@@ -1,5 +1,4 @@
 [build]
-  base = "frontend"
   command = "npm run build"
   publish = ".next"
 
@@ -20,5 +19,4 @@
   from = "/*"
   to = "/index.html"
   status = 200
-  force = false
-  conditions = {Role = ["anonymous"]} 
+  force = false 

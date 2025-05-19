@@ -38,18 +38,31 @@ export const isLensChain = (chainId: number) => {
   );
 };
 
-// Extra chain details not provided by SDK
-export const LENS_CHAIN_DETAILS = {
+// Lens Chain details with RPC URLs and block explorers
+export const LENS_CHAIN_DETAILS: Record<
+  number,
+  {
+    name: string;
+    shortName: string;
+    symbol: string;
+    rpcUrl: string;
+    explorerUrl: string;
+  }
+> = {
   [CHAIN_IDS.LENS_MAINNET]: {
-    name: "Lens Chain Mainnet",
-    rpcUrl: "https://rpc.lens.xyz",
-    currencySymbol: "GHO",
-    explorerUrl: "https://explorer.lens.xyz",
+    name: "Lens",
+    shortName: "lens",
+    symbol: "GHO",
+    rpcUrl:
+      "https://lens-mainnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH",
+    explorerUrl: "https://lensscan.io",
   },
   [CHAIN_IDS.LENS_TESTNET]: {
-    name: "Lens Chain Testnet",
-    rpcUrl: "https://rpc.testnet.lens.xyz",
-    currencySymbol: "GRASS",
-    explorerUrl: "https://explorer.testnet.lens.xyz",
+    name: "Lens Testnet",
+    shortName: "lens-testnet",
+    symbol: "GHO",
+    rpcUrl:
+      "https://lens-testnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH",
+    explorerUrl: "https://testnet.lensscan.io",
   },
 };

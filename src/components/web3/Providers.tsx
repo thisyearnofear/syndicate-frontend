@@ -20,13 +20,11 @@ import { chainSwitchOrchestrator } from "@/services/ChainSwitchOrchestrator";
 
 // Get RPC URLs from environment or defaults
 const LENS_MAINNET_RPC_URL =
-  process.env.NEXT_PUBLIC_LENS_MAINNET_RPC_URL ||
-  LENS_CHAIN_DETAILS[CHAIN_IDS.LENS_MAINNET].rpcUrl;
+  "https://lens-mainnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH";
 const LENS_TESTNET_RPC_URL =
-  process.env.NEXT_PUBLIC_LENS_TESTNET_RPC_URL ||
-  LENS_CHAIN_DETAILS[CHAIN_IDS.LENS_TESTNET].rpcUrl;
+  "https://lens-testnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH";
 const BASE_RPC_URL =
-  process.env.NEXT_PUBLIC_BASE_RPC_URL || "https://mainnet.base.org";
+  "https://base-mainnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH";
 
 // Define supported chains for the app
 const appChains = [lensMainnet, lensTestnet, base] as const;

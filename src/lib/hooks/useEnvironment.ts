@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 const defaults = {
   APP_URL: "http://localhost:3000",
   ENVIRONMENT: "development",
-  LENS_MAINNET_RPC_URL: "https://rpc.lens.xyz",
-  LENS_TESTNET_RPC_URL: "https://rpc.testnet.lens.xyz",
-  BASE_CHAIN_RPC_URL: "https://mainnet.base.org",
+  LENS_MAINNET_RPC_URL:
+    "https://lens-mainnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH",
+  LENS_TESTNET_RPC_URL:
+    "https://lens-testnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH",
+  BASE_CHAIN_RPC_URL:
+    "https://base-mainnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH",
 };
 
 // Helper to get environment variable from multiple sources

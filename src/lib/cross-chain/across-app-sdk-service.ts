@@ -1,12 +1,13 @@
 "use client";
 
 import { createAcrossClient } from "@across-protocol/app-sdk";
-import { base, mainnet } from "viem/chains";
+import { mainnet } from "viem/chains";
 import {
   ChainId,
   ACROSS_INTEGRATOR_ID,
   GHO_ADDRESS_LENS,
   USDC_ADDRESS_BASE,
+  getRpcUrl,
 } from "./config";
 
 // Custom chain definition for Lens Chain
@@ -21,16 +22,50 @@ const lensChain = {
   },
   rpcUrls: {
     default: {
-      http: ["https://rpc.lens.xyz"],
+      http: [
+        "https://lens-mainnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH",
+      ],
     },
     public: {
-      http: ["https://rpc.lens.xyz"],
+      http: [
+        "https://lens-mainnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH",
+      ],
     },
   },
   blockExplorers: {
     default: {
       name: "Lens Explorer",
       url: "https://explorer.lens.xyz",
+    },
+  },
+};
+
+// Custom chain definition for Base with Alchemy RPC URL
+const baseChain = {
+  id: 8453,
+  name: "Base",
+  network: "base",
+  nativeCurrency: {
+    name: "Ether",
+    symbol: "ETH",
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: [
+        "https://base-mainnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH",
+      ],
+    },
+    public: {
+      http: [
+        "https://base-mainnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH",
+      ],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "BaseScan",
+      url: "https://basescan.org",
     },
   },
 };
@@ -42,7 +77,7 @@ export const createAcrossAppClient = (integratorId = ACROSS_INTEGRATOR_ID) => {
   // Create the Across client with supported chains
   const client = createAcrossClient({
     integratorId: (integratorId || "syndicate-lens") as `0x${string}`, // Use your integrator ID or a default
-    chains: [lensChain, base, mainnet], // Add all chains you want to support
+    chains: [lensChain, baseChain, mainnet], // Add all chains you want to support
   });
 
   return client;
@@ -147,10 +182,12 @@ export const executeAcrossQuote = async (params: {
         if (
           error.message?.includes("filter not found") ||
           error.message?.includes("Missing or invalid parameters") ||
-          error.message?.includes("Event filtering currently disabled")
+          error.message?.includes("Event filtering currently disabled") ||
+          error.message?.includes("eth_getFilterChanges") // Specifically handle the error mentioned in logs
         ) {
-          console.warn(
-            "RPC provider has limited event filtering support, switching to polling mode"
+          console.error(
+            "Event filtering currently disabled for this RPC provider, switching to getFillByDepositTx()",
+            { cause: error }
           );
 
           // Continue the process despite the event filtering error
@@ -162,10 +199,46 @@ export const executeAcrossQuote = async (params: {
               meta: {
                 reason: "RPC provider does not support event filtering",
                 message:
-                  "Your transaction is processing. It may take 10-30 minutes to complete.",
+                  "Your transaction is processing. It may take 10-30 minutes to complete. We're using an alternative method to track its progress.",
               },
             });
           }
+
+          // Begin manual polling for fill status instead of relying on event filtering
+          setTimeout(() => {
+            if (params.onProgress) {
+              params.onProgress({
+                step: "fill",
+                status: "checking",
+                meta: {
+                  message: "Checking transaction status...",
+                },
+              });
+            }
+
+            // Poll Across API directly to check status
+            // This would typically be handled by the SDK but we're implementing a fallback
+            fetch(
+              `https://across.to/api/v1/fills?depositTxHash=${params.deposit.depositTxHash}`
+            )
+              .then((response) => response.json())
+              .then((data) => {
+                if (data?.fills?.length > 0) {
+                  const fill = data.fills[0];
+                  if (params.onProgress) {
+                    params.onProgress({
+                      step: "fill",
+                      status:
+                        fill.status === "filled" ? "txSuccess" : "txPending",
+                      meta: {
+                        fill,
+                      },
+                    });
+                  }
+                }
+              })
+              .catch((e) => console.error("Error checking fill status:", e));
+          }, 60000); // Check after 1 minute
 
           return {
             status: "processing",

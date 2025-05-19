@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/fix-dependencies.js || echo 'Continuing without fix-dependencies.js'",
+    "prebuild": "node scripts/check-env.js && node scripts/fix-dependencies.js || echo 'Continuing without fix-dependencies.js'",
     "build": "next build",
     "start": "next start",
     "format": "biome format --write src",

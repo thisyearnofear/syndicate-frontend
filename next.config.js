@@ -118,15 +118,14 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_APP_URL:
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-    NEXT_PUBLIC_ENVIRONMENT:
-      process.env.NEXT_PUBLIC_ENVIRONMENT || "development",
+    NEXT_PUBLIC_ENVIRONMENT: process.env.NEXT_PUBLIC_ENVIRONMENT || "mainnet",
+    // Use dedicated RPC providers instead of public endpoints
     NEXT_PUBLIC_LENS_MAINNET_RPC_URL:
-      process.env.NEXT_PUBLIC_LENS_MAINNET_RPC_URL || "https://rpc.lens.xyz",
+      "https://lens-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY", // Replace with your actual Alchemy key
     NEXT_PUBLIC_LENS_TESTNET_RPC_URL:
-      process.env.NEXT_PUBLIC_LENS_TESTNET_RPC_URL ||
-      "https://rpc.testnet.lens.xyz",
+      "https://lens-testnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY", // Replace with your actual Alchemy key
     NEXT_PUBLIC_BASE_CHAIN_RPC_URL:
-      process.env.NEXT_PUBLIC_BASE_CHAIN_RPC_URL || "https://mainnet.base.org",
+      "https://base-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY", // Replace with your actual Alchemy key
   },
 };
 

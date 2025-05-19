@@ -1,10 +1,6 @@
 "use client";
 
 import React from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createConfig, http } from "wagmi";
-import { base } from "viem/chains";
-import { WagmiProvider } from "wagmi";
 import { MegapotWrapper } from "./MegapotWrapper";
 import { FullJackpotDisplay } from "../jackpot/FullJackpotDisplay";
 import { CrossChainApproaches } from "./CrossChainApproaches";
@@ -12,103 +8,73 @@ import { motion } from "framer-motion";
 import { ConnectKitButton } from "connectkit";
 import { Button } from "../ui/inputs/button";
 
-// Private Alchemy RPC URL for Base chain
-const ALCHEMY_BASE_RPC_URL =
-  "https://base-mainnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH";
-
-// Create a client for React Query with better defaults
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 2,
-      retryDelay: 1000,
-      staleTime: 1000 * 60, // 1 minute
-      gcTime: 1000 * 60 * 5, // 5 minutes
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-// Configure Wagmi with Base chain using Alchemy RPC
-const wagmiConfig = createConfig({
-  chains: [base],
-  transports: {
-    [base.id]: http(ALCHEMY_BASE_RPC_URL),
-  },
-});
-
 /**
- * MegapotPage component that sets up the necessary providers
- * and displays the Megapot Jackpot components
+ * MegapotPage component that displays the Megapot Jackpot components
+ * Uses the global providers from layout.tsx instead of creating new ones
  */
 export function MegapotPage() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <WagmiProvider config={wagmiConfig}>
-        {/* ConnectKitProvider is already provided by the global Providers component */}
-        <MegapotWrapper>
-          <div className="container mx-auto px-4 py-12">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="mb-8 text-center"
-            >
-              <h1 className="text-3xl md:text-4xl font-bold mb-4">
-                Megapot Jackpots
-              </h1>
-              <p className="text-white/70 max-w-2xl mx-auto mb-6">
-                Join our Syndicate pools to increase your chances of winning
-                these jackpots while supporting causes you care about.
-              </p>
+    <MegapotWrapper>
+      <div className="container mx-auto px-4 py-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8 text-center"
+        >
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">
+            Megapot Jackpots
+          </h1>
+          <p className="text-white/70 max-w-2xl mx-auto mb-6">
+            Join our Syndicate pools to increase your chances of winning these
+            jackpots while supporting causes you care about.
+          </p>
 
-              {/* Connect Wallet Button */}
-              <div className="flex justify-center mb-4">
-                <ConnectKitButton.Custom>
-                  {({ isConnected, show, truncatedAddress, ensName }) => {
-                    const displayName = ensName ?? truncatedAddress;
+          {/* Connect Wallet Button */}
+          <div className="flex justify-center mb-4">
+            <ConnectKitButton.Custom>
+              {({ isConnected, show, truncatedAddress, ensName }) => {
+                const displayName = ensName ?? truncatedAddress;
 
-                    if (!isConnected) {
-                      return (
-                        <Button
-                          onClick={show}
-                          className="px-6 py-3 rounded-full bg-[#00bcd4] text-white font-bold shadow hover:bg-[#0097a7] transition"
-                        >
-                          🧑‍🤝‍🧑 Continue with Family Wallet
-                        </Button>
-                      );
-                    }
+                if (!isConnected) {
+                  return (
+                    <Button
+                      onClick={show}
+                      className="px-6 py-3 rounded-full bg-[#00bcd4] text-white font-bold shadow hover:bg-[#0097a7] transition"
+                    >
+                      🧑‍🤝‍🧑 Continue with Family Wallet
+                    </Button>
+                  );
+                }
 
-                    return (
-                      <div className="text-center">
-                        <Button
-                          onClick={show}
-                          variant="secondary"
-                          className="px-4 py-2"
-                        >
-                          <span className="mr-2">🧑‍🤝‍🧑</span>
-                          {displayName}
-                        </Button>
-                      </div>
-                    );
-                  }}
-                </ConnectKitButton.Custom>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <FullJackpotDisplay />
-            </motion.div>
-
-            {/* Cross-Chain Approaches Section */}
-            <CrossChainApproaches />
+                return (
+                  <div className="text-center">
+                    <Button
+                      onClick={show}
+                      variant="secondary"
+                      className="px-4 py-2"
+                    >
+                      <span className="mr-2">🧑‍🤝‍🧑</span>
+                      {displayName}
+                    </Button>
+                  </div>
+                );
+              }}
+            </ConnectKitButton.Custom>
           </div>
-        </MegapotWrapper>
-      </WagmiProvider>
-    </QueryClientProvider>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <FullJackpotDisplay />
+        </motion.div>
+
+        {/* Cross-Chain Approaches Section */}
+        <CrossChainApproaches />
+      </div>
+    </MegapotWrapper>
   );
 }

@@ -7,7 +7,6 @@ import {
   usePublicClient,
 } from "wagmi";
 import { type Address } from "viem";
-import { GraphQLClient } from "graphql-request";
 import { Card } from "@/components/ui/data-display/card";
 import { Button } from "@/components/ui/inputs/button";
 import { Input } from "@/components/ui/inputs/input";
@@ -18,59 +17,70 @@ import { ChainId } from "@/lib/cross-chain/config";
 import { parseUnits, formatUnits } from "viem";
 import { UNISWAP_V3_ROUTER_ABI } from "@/lib/abis/uniswap-v3-router";
 import { ERC20_ABI } from "@/lib/abis/erc20";
+// Import the package properly without assuming specific exports
+import * as oku from "@gfxlabs/oku";
 
 // Constants
-// Use environment variable with hardcoded fallback for maximum reliability
 const OKU_API_ENDPOINT = process.env.NEXT_PUBLIC_OKU_API_ENDPOINT || "https://api.oku.trade/api";
-const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // Base USDC
-const WGHO_ADDRESS = "0x6bDc36E20D267Ff0dd6097799f82e78907105e2F"; // Wrapped GHO
+const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // USDC on Lens chain
+const WGHO_ADDRESS = "0x6bDc36E20D267Ff0dd6097799f82e78907105e2F"; // Wrapped GHO on Lens chain
 const ROUTER_ADDRESS = "0xE592427A0AEce92De3Edee1F18E0157C05861564"; // Uniswap V3 Router
+const LENS_CHAIN_ID = 232;
 
-// GraphQL query for finding the best pool
-// Using a simplified query structure to avoid potential schema issues
-const FIND_BEST_POOL = `
-  query FindBestPool($token0: String!, $token1: String!) {
-    pools(
-      first: 5
-      orderBy: liquidity
-      orderDirection: desc
-      where: {and: [{or: [{token0: $token0}, {token0: $token1}]}, {or: [{token1: $token0}, {token1: $token1}]}]}
-    ) {
-      id
-      liquidity
-      feeTier
-      token0 {
-        id
-        symbol
-        decimals
-      }
-      token1 {
-        id
-        symbol
-        decimals
-      }
+// Use the API directly without client class
+const getTopPoolsByTvl = async (tokenA: string, tokenB: string) => {
+  try {
+    const response = await fetch(`${OKU_API_ENDPOINT}/v1/pools/top`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        token0: tokenA,
+        token1: tokenB,
+        chain_id: LENS_CHAIN_ID,
+        count: 5
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
     }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching top pools:', error);
+    throw error;
   }
-`;
+};
 
-// Types for Oku API response
-interface TokenInfo {
-  id: string;
-  symbol: string;
-  decimals: number;
-}
-
-interface PoolInfo {
-  id: string;
-  liquidity: string;
-  feeTier: number;
-  token0: TokenInfo;
-  token1: TokenInfo;
-}
-
-interface OkuApiResponse {
-  pools: PoolInfo[];
-}
+const getQuote = async (tokenIn: string, tokenOut: string, amount: string, poolId: string, slippageTolerance: number) => {
+  try {
+    const response = await fetch(`${OKU_API_ENDPOINT}/v1/quote`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        tokenIn,
+        tokenOut,
+        amount,
+        poolId,
+        slippage: slippageTolerance / 100, // Convert from percentage to decimal
+        chain_id: LENS_CHAIN_ID
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching quote:', error);
+    throw error;
+  }
+};
 
 export function SwapComponent() {
   const { address, isConnected } = useAccount();
@@ -78,21 +88,16 @@ export function SwapComponent() {
   const [amount, setAmount] = useState<string>("1");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [bestPool, setBestPool] = useState<PoolInfo | null>(null);
+  // Use a more generic type since PoolOverview isn't available
+  const [bestPool, setBestPool] = useState<any | null>(null);
   const [estimatedOutput, setEstimatedOutput] = useState<string>("0");
   const [slippage, setSlippage] = useState<number>(0.5);
   const [approvalNeeded, setApprovalNeeded] = useState<boolean>(false);
   const [approvalHash, setApprovalHash] = useState<`0x${string}` | undefined>(
     undefined
   );
-  const [swapHash, setSwapHash] = useState<`0x${string}` | undefined>(
-    undefined
-  );
+  const [swapHash, setSwapHash] = useState<`0x${string}` | undefined>(undefined);
 
-  // Initialize GraphQL client with useMemo to prevent recreation on every render
-  const client = useMemo(() => new GraphQLClient(OKU_API_ENDPOINT), []);
-
-  // Contract reads
   const { data: allowance } = useReadContract({
     address: USDC_ADDRESS as Address,
     abi: ERC20_ABI,
@@ -100,13 +105,10 @@ export function SwapComponent() {
     args: address ? [address as Address, ROUTER_ADDRESS as Address] : undefined,
   });
 
-  // Prepare approval transaction
   const amountToApprove = amount ? parseUnits(amount, 6) : 0n;
 
-  // Write contracts - wagmi v2 style
   const { writeContract: approve, isPending: isApproving, data: approvalData } = useWriteContract();
-  
-  // Watch for approval data and set the hash
+
   useEffect(() => {
     if (approvalData) {
       console.log("Approval transaction submitted with hash:", approvalData);
@@ -114,24 +116,20 @@ export function SwapComponent() {
     }
   }, [approvalData]);
 
-  // Track approval transaction
   const { isLoading: isApprovalLoading, status: approvalStatus } = useWaitForTransactionReceipt({
     hash: approvalHash,
   });
 
-  // When approval transaction completes, update state
   useEffect(() => {
     if (approvalStatus === "success" && approvalHash) {
       console.log("Approval transaction confirmed");
       setApprovalNeeded(false);
-      // Keep the hash for the transaction history
     } else if (approvalStatus === "error" && approvalHash) {
       setError("Approval transaction failed. Please try again.");
       setApprovalHash(undefined);
     }
   }, [approvalStatus, approvalHash]);
 
-  // Prepare swap transaction
   const swapAmount = amount ? parseUnits(amount, 6) : 0n;
   const minOutput = estimatedOutput
     ? (parseUnits(estimatedOutput, 18) * BigInt(Math.floor(1000 - slippage * 10))) / BigInt(1000)
@@ -151,10 +149,8 @@ export function SwapComponent() {
         }
       : undefined;
 
-  // Write contract for swap - wagmi v2 style
   const { writeContract: swap, isPending: isSwapping, data: swapData } = useWriteContract();
-  
-  // Watch for swap data and set the hash
+
   useEffect(() => {
     if (swapData) {
       console.log("Swap transaction submitted with hash:", swapData);
@@ -162,15 +158,12 @@ export function SwapComponent() {
     }
   }, [swapData]);
 
-  // Watch swap transaction with full status
   const { isLoading: isSwapLoading, status: swapStatus } = useWaitForTransactionReceipt({
     hash: swapHash,
   });
 
-  // Track swap transaction status
   const [txStatus, setTxStatus] = useState<'none' | 'pending' | 'mining' | 'success' | 'error'>('none');
 
-  // Update transaction status based on the current state
   useEffect(() => {
     if (isApproving || isSwapping) {
       setTxStatus('pending');
@@ -183,109 +176,47 @@ export function SwapComponent() {
     }
   }, [isApproving, isSwapping, isApprovalLoading, isSwapLoading, approvalStatus, swapStatus]);
 
-  // When swap transaction completes, update state
   useEffect(() => {
     if (swapStatus === "success" && swapHash) {
       console.log("Swap transaction confirmed successfully");
-      // Keep the hash for transaction history
       toast.success("Swap completed successfully!");
     } else if (swapStatus === "error" && swapHash) {
       console.error("Swap transaction failed");
       setError("Swap transaction failed. Please try again.");
-      // Keep the hash for reference
     }
   }, [swapStatus, swapHash]);
 
-  // Function to find the best pool
   const findBestPool = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-
-      // Temporarily use a hardcoded test pool to avoid GraphQL issues
-      // This is a workaround while we debug the API connection
-      console.log("Attempting to find pools...");
+      console.log("Finding best pool for USDC/GHO swap using Oku API...");
       
       try {
-        // First, try a direct fetch to avoid GraphQL client issues
-        const response = await fetch(`${OKU_API_ENDPOINT}/graphql`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query: FIND_BEST_POOL,
-            variables: {
-              token0: USDC_ADDRESS.toLowerCase(),
-              token1: WGHO_ADDRESS.toLowerCase(),
-            },
-          }),
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status} ${response.statusText}`);
-        }
-        
-        const result = await response.json();
-        console.log("API Response:", result);
-        
-        if (result.errors) {
-          throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`);
-        }
-        
-        const data = result.data as OkuApiResponse;
-
-        if (!data.pools || data.pools.length === 0) {
-          // Fallback to mock data for testing if no pools found
-          console.log("No pools found, using fallback test data");
-          const mockPool: PoolInfo = {
-            id: "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", // Test USDC-ETH pool
-            liquidity: "123456789000000000000000",
-            feeTier: 500, // 0.05%
-            token0: {
-              id: USDC_ADDRESS.toLowerCase(),
-              symbol: "USDC",
-              decimals: 6
-            },
-            token1: {
-              id: WGHO_ADDRESS.toLowerCase(),
-              symbol: "GHO",
-              decimals: 18
-            }
-          };
-          setBestPool(mockPool);
-          console.log("Using mock pool data:", mockPool);
-          return;
-        }
-
-        // Select pool with highest liquidity
-        const pool = data.pools.reduce((best: PoolInfo, current: PoolInfo) =>
-          BigInt(current.liquidity) > BigInt(best.liquidity) ? current : best
+        const pools = await getTopPoolsByTvl(
+          USDC_ADDRESS,
+          WGHO_ADDRESS
         );
+        
+        console.log("Oku pools response:", pools);
+        
+        if (!pools || pools.length === 0) {
+          throw new Error("No pools found for USDC/GHO pair");
+        }
 
+        const pool = pools[0];
         setBestPool(pool);
         console.log("Best pool found:", pool);
-      } catch (graphqlErr) {
-        console.error("GraphQL request failed:", graphqlErr);
-        // Use fallback mock data for testing instead of throwing an error
-        console.log("Using fallback test data due to API error");
-        const mockPool: PoolInfo = {
-          id: "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", // Test USDC-ETH pool 
-          liquidity: "123456789000000000000000",
-          feeTier: 500, // 0.05%
-          token0: {
-            id: USDC_ADDRESS.toLowerCase(),
-            symbol: "USDC",
-            decimals: 6
-          },
-          token1: {
-            id: WGHO_ADDRESS.toLowerCase(),
-            symbol: "GHO",
-            decimals: 18
-          }
-        };
-        setBestPool(mockPool);
-        console.log("Using mock pool data:", mockPool);
+        
+        if (amount) {
+          const amountIn = parseUnits(amount, 6); // USDC has 6 decimals
+          estimateOutput(amountIn);
+        }
+        
+      } catch (apiErr) {
+        console.error("Oku API request failed:", apiErr);
+        setError("Failed to find liquidity pool. Please try again later.");
+        toast.error("Could not find a suitable liquidity pool");
       }
     } catch (err: any) {
       console.error("Error finding best pool:", err);
@@ -293,127 +224,98 @@ export function SwapComponent() {
     } finally {
       setIsLoading(false);
     }
-  }, []); // Remove client from dependencies since it's now stable with useMemo
+  }, [amount]);
 
-  // Function to get quote from Oku API with reliable fallback
-  const getQuote = useCallback(
+  const getSwapQuote = useCallback(
     async (amountIn: bigint) => {
       try {
-        console.log(`Attempting to get quote for ${formatUnits(amountIn, 6)} USDC to GHO`);
+        console.log(`Getting quote for ${formatUnits(amountIn, 6)} USDC to GHO via Oku API`);
         
-        // First try the actual API
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
-          
-          const response = await fetch(`${OKU_API_ENDPOINT}/v1/quote`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              tokenIn: USDC_ADDRESS,
-              tokenOut: WGHO_ADDRESS,
-              amount: amountIn.toString(),
-              poolId: bestPool?.id,
-            }),
-            signal: controller.signal
-          });
-          
-          clearTimeout(timeoutId);
-
-          if (response.ok) {
-            const quote = await response.json();
-            console.log("Received quote from API:", quote);
-            return BigInt(quote.amountOut);
-          }
-          
-          console.log(`API returned status ${response.status}. Using fallback quote.`);
-        } catch (apiErr) {
-          console.log("API quote failed, using fallback:", apiErr);
-          // Continue to fallback - don't return here
+        if (!bestPool) {
+          throw new Error("No pool selected");
         }
         
-        // Fallback: Calculate a simulated quote locally
-        // This provides a reasonable estimate during API issues
-        // Mock a ~0.5% fee and some slippage
-        const exchangeRate = 0.95; // 1 USDC ≈ 0.95 GHO
-        const amountInFloat = parseFloat(formatUnits(amountIn, 6));
-        const estimatedAmountOut = amountInFloat * exchangeRate;
-        
-        // Convert to BigInt with proper decimals
-        const simulatedAmountOut = parseUnits(
-          estimatedAmountOut.toFixed(6), // Limit decimal places
-          18 // GHO has 18 decimals
+        const quote = await getQuote(
+          USDC_ADDRESS,
+          WGHO_ADDRESS,
+          amountIn.toString(),
+          bestPool.id || bestPool.poolId, // Handle different property names
+          slippage
         );
         
-        console.log(`Generated fallback quote: ${formatUnits(simulatedAmountOut, 18)} GHO`);
-        return simulatedAmountOut;
+        console.log("Received quote from Oku API:", quote);
+        
+        if (quote && quote.amountOut) {
+          return BigInt(quote.amountOut);
+        } else {
+          throw new Error("Invalid quote response");
+        }
       } catch (err) {
-        console.error("Error in quote generation:", err);
-        // Even if everything fails, return a default estimate
-        // This ensures the UI doesn't break completely
-        const fallbackAmount = parseUnits("0.95", 18); // Minimum fallback
-        console.log("Using emergency fallback amount:", formatUnits(fallbackAmount, 18));
-        return fallbackAmount;
+        console.error("Error getting quote from Oku:", err);
+        setError("Failed to get price quote. Please try again.");
+        return BigInt(0);
       }
     },
-    [bestPool]
+    [bestPool, slippage]
   );
 
-  // Function to estimate output amount
-  const estimateOutput = useCallback(async () => {
-    if (!bestPool || !amount) return;
-
-    try {
-      const isToken0USDC = bestPool.token0.id === USDC_ADDRESS.toLowerCase();
-      const inputDecimals = isToken0USDC ? 6 : 18;
-      const outputDecimals = isToken0USDC ? 18 : 6;
-
-      const amountIn = parseUnits(amount, inputDecimals);
-      const estimatedAmountOut = await getQuote(amountIn);
-
-      if (estimatedAmountOut) {
-        setEstimatedOutput(formatUnits(estimatedAmountOut, outputDecimals));
+  const estimateOutput = useCallback(
+    async (amountIn: bigint) => {
+      if (!bestPool) {
+        console.warn("Cannot estimate output: No pool selected");
+        return;
       }
-    } catch (err: any) {
-      console.error("Error estimating output:", err);
-      setError(err.message || "Failed to estimate output");
+
+      try {
+        const amountOut = await getSwapQuote(amountIn);
+        if (amountOut === BigInt(0)) {
+          setEstimatedOutput("0");
+          return;
+        }
+        
+        const formattedOutput = formatUnits(amountOut, 18); // GHO has 18 decimals
+        setEstimatedOutput(parseFloat(formattedOutput).toFixed(6));
+        console.log(`Estimated output: ${formattedOutput} GHO`);
+      } catch (err) {
+        console.error("Error estimating output:", err);
+        setEstimatedOutput("0");
+        setError("Could not estimate swap output");
+      }
+    },
+    [bestPool, getSwapQuote]
+  );
+
+  useEffect(() => {
+    if (allowance !== undefined && allowance !== null && swapAmount > 0n) {
+      const allowanceBigInt = BigInt(allowance.toString());
+      const needsApproval = allowanceBigInt < swapAmount;
+      setApprovalNeeded(needsApproval);
+      console.log(`Approval needed: ${needsApproval} (allowance: ${allowanceBigInt}, swap amount: ${swapAmount})`);
     }
-  }, [bestPool, amount, getQuote]);
+  }, [allowance, swapAmount]);
 
-  // Check if approval is needed
   useEffect(() => {
-    if (!allowance || !amount || !bestPool) return;
-
-    const amountIn = parseUnits(amount, 6);
-    setApprovalNeeded(BigInt(allowance.toString()) < amountIn);
-  }, [allowance, amount, bestPool]);
-
-  // Effect to find best pool on mount
-  useEffect(() => {
-    if (isConnected) {
-      findBestPool();
-    }
-  }, [isConnected, findBestPool]);
-
-  // Effect to update estimated output when amount changes
-  useEffect(() => {
-    if (bestPool && amount) {
-      // Simple mock estimation for testing purposes
-      if (process.env.NODE_ENV === 'development') {
+    const updateQuote = async () => {
+      if (bestPool && amount) {
         try {
-          const mockEstimation = parseFloat(amount) * 0.95;
-          setEstimatedOutput(mockEstimation.toFixed(4));
-          console.log("Using mock estimation during API issues:", mockEstimation.toFixed(4));
-        } catch (e) {
-          console.error("Error in mock estimation:", e);
+          const amountIn = parseUnits(amount, 6); // USDC has 6 decimals
+          await estimateOutput(amountIn);
+        } catch (err) {
+          console.error("Error updating quote:", err);
+          setEstimatedOutput("0");
         }
       } else {
-        estimateOutput();
+        setEstimatedOutput("0");
       }
-    }
+    };
+
+    updateQuote();
   }, [bestPool, amount, estimateOutput]);
 
-  // Handle swap execution with proper transaction lifecycle management
+  useEffect(() => {
+    findBestPool();
+  }, [findBestPool]);
+
   const handleSwap = async () => {
     if (!isConnected || !bestPool || !address) return;
 
@@ -423,7 +325,7 @@ export function SwapComponent() {
 
       if (approvalNeeded) {
         try {
-          // The hash will be captured in the onSuccess callback
+          console.log(`Approving USDC spending: ${formatUnits(swapAmount, 6)} USDC`);
           await approve({
             address: USDC_ADDRESS as Address,
             abi: ERC20_ABI,
@@ -431,11 +333,7 @@ export function SwapComponent() {
             args: [ROUTER_ADDRESS as Address, swapAmount],
           });
           
-          // Transaction submitted - UI will update via status tracking
           console.log("Approval transaction submitted, waiting for confirmation...");
-          // Don't setIsLoading(false) here - we want to keep the loading state until confirmed
-          
-          // Early return but keep loading state active
           return;
         } catch (err: any) {
           console.error("Approval error:", err);
@@ -447,7 +345,22 @@ export function SwapComponent() {
 
       if (swapParams) {
         try {
-          // The hash will be captured in the onSuccess callback
+          console.log("Executing swap with params:", swapParams);
+          
+          const quoteData = await getQuote(
+            USDC_ADDRESS,
+            WGHO_ADDRESS,
+            swapAmount.toString(),
+            bestPool.id || bestPool.poolId, // Handle different property names
+            slippage
+          );
+          
+          if (!quoteData) {
+            throw new Error("Failed to get swap quote");
+          }
+          
+          console.log("Quote data received:", quoteData);
+          
           await swap({
             address: ROUTER_ADDRESS as Address,
             abi: UNISWAP_V3_ROUTER_ABI,
@@ -455,9 +368,7 @@ export function SwapComponent() {
             args: [swapParams],
           });
 
-          // Transaction submitted - UI will update via status tracking
           console.log("Swap transaction submitted, waiting for confirmation...");
-          // Don't setIsLoading(false) here - we want to keep the UI in loading state
         } catch (err: any) {
           console.error("Swap error:", err);
           setError(err.message || "Failed to execute swap");
@@ -469,18 +380,13 @@ export function SwapComponent() {
       setError(err.message || "Failed to execute transaction");
       setIsLoading(false);
     }
-    // Note: We're not using finally{setIsLoading(false)} anymore because
-    // we want the loading state to persist until transaction confirmation
   };
 
-  // Determine the current pending state for UI
   const isPending =
     isApproving || isSwapping || isApprovalLoading || isSwapLoading;
   
-  // Track the current transaction hash for display
   const currentTxHash = approvalHash || swapHash;
   
-  // Get transaction status message for UI
   const getStatusMessage = () => {
     if (isApproving) return "Submitting approval transaction...";
     if (isApprovalLoading) return "Confirming approval on blockchain...";
@@ -543,20 +449,23 @@ export function SwapComponent() {
                 <div className="flex justify-between">
                   <span>Fee Tier:</span>
                   <span className="text-cyan-400">
-                    {bestPool.feeTier / 10000}%
+                    {(bestPool.fee || bestPool.feeTier) / 10000}%
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Liquidity:</span>
                   <span className="text-cyan-400">
-                    {formatUnits(BigInt(bestPool.liquidity), 18)}
+                    {bestPool.tvlUSD ? 
+                      `$${bestPool.tvlUSD.toLocaleString()}` : 
+                      bestPool.liquidity ? 
+                        `${formatUnits(BigInt(bestPool.liquidity.toString()), 18)}` : 
+                        "Loading..."}
                   </span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Add slippage settings */}
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-2">
               <Settings className="h-4 w-4 text-white/60" />

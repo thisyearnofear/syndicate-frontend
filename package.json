@@ -19,6 +19,7 @@
     "@decent.xyz/box-common": "^5.1.5",
     "@decent.xyz/box-hooks": "^5.1.5",
     "@decent.xyz/box-ui": "^5.1.5",
+    "@gfxlabs/oku": "^1.0.141",
     "@hookform/resolvers": "^5.0.1",
     "@lens-chain/sdk": "^1.0.3",
     "@lens-protocol/client": "^2.0.0",

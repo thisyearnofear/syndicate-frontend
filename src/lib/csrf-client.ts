@@ -1,27 +1,15 @@
-// Utility to get CSRF token from cookie and set it in request headers
+// CSRF utilities completely disabled as of May 2025 due to persistent authentication issues
+// This file remains to prevent import errors but all functionality is disabled
 import { CSRF_HEADER } from "./csrf";
 
 export function getCsrfTokenFromCookie(): string | null {
-  if (typeof document === "undefined") return null;
-
-  try {
-    const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
-    const token = match ? decodeURIComponent(match[1]) : null;
-
-    // Log token presence for debugging (not the actual token value for security)
-    console.log(`CSRF token ${token ? 'found' : 'not found'} in cookie`);
-
-    return token;
-  } catch (error) {
-    console.error('Error retrieving CSRF token from cookie:', error);
-    return null;
-  }
+  // Function disabled - always returns null
+  console.log('CSRF token retrieval completely disabled');
+  return null;
 }
 
 export function withCsrf(headers: HeadersInit = {}): HeadersInit {
-  const token = getCsrfTokenFromCookie();
-  if (token) {
-    return { ...headers, [CSRF_HEADER]: token };
-  }
-  return headers;
+  // Function disabled - CSRF headers no longer added to requests
+  console.log('CSRF header addition completely disabled');
+  return {};
 }

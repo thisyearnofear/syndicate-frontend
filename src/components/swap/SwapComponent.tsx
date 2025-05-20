@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/data-display/card";
 import { Button } from "@/components/ui/inputs/button";
 import { Input } from "@/components/ui/inputs/input";
 import { Loader2, ArrowDown, AlertCircle, Settings } from "lucide-react";
+import { toast } from "sonner";
 import { formatAddress, getExplorerLink } from "@/lib/utils";
 import { ChainId } from "@/lib/cross-chain/config";
 import { parseUnits, formatUnits } from "viem";
@@ -103,21 +104,32 @@ export function SwapComponent() {
   const amountToApprove = amount ? parseUnits(amount, 6) : 0n;
 
   // Write contracts - wagmi v2 style
-  const { writeContract: approve, isPending: isApproving } = useWriteContract();
+  const { writeContract: approve, isPending: isApproving, data: approvalData } = useWriteContract();
+  
+  // Watch for approval data and set the hash
+  useEffect(() => {
+    if (approvalData) {
+      console.log("Approval transaction submitted with hash:", approvalData);
+      setApprovalHash(approvalData);
+    }
+  }, [approvalData]);
 
-  // In wagmi v2, we need a different approach to track transactions
-  // For now, we'll use a simplified approach
-  const { isLoading: isApprovalLoading } = useWaitForTransactionReceipt({
+  // Track approval transaction
+  const { isLoading: isApprovalLoading, status: approvalStatus } = useWaitForTransactionReceipt({
     hash: approvalHash,
   });
 
   // When approval transaction completes, update state
   useEffect(() => {
-    if (isApprovalLoading === false && approvalHash) {
+    if (approvalStatus === "success" && approvalHash) {
+      console.log("Approval transaction confirmed");
       setApprovalNeeded(false);
+      // Keep the hash for the transaction history
+    } else if (approvalStatus === "error" && approvalHash) {
+      setError("Approval transaction failed. Please try again.");
       setApprovalHash(undefined);
     }
-  }, [isApprovalLoading, approvalHash]);
+  }, [approvalStatus, approvalHash]);
 
   // Prepare swap transaction
   const swapAmount = amount ? parseUnits(amount, 6) : 0n;
@@ -140,18 +152,49 @@ export function SwapComponent() {
       : undefined;
 
   // Write contract for swap - wagmi v2 style
-  const { writeContract: swap, isPending: isSwapping } = useWriteContract();
+  const { writeContract: swap, isPending: isSwapping, data: swapData } = useWriteContract();
+  
+  // Watch for swap data and set the hash
+  useEffect(() => {
+    if (swapData) {
+      console.log("Swap transaction submitted with hash:", swapData);
+      setSwapHash(swapData);
+    }
+  }, [swapData]);
 
-  // Watch swap transaction
-  const { isLoading: isSwapLoading } = useWaitForTransactionReceipt({
+  // Watch swap transaction with full status
+  const { isLoading: isSwapLoading, status: swapStatus } = useWaitForTransactionReceipt({
     hash: swapHash,
   });
 
+  // Track swap transaction status
+  const [txStatus, setTxStatus] = useState<'none' | 'pending' | 'mining' | 'success' | 'error'>('none');
+
+  // Update transaction status based on the current state
   useEffect(() => {
-    if (isSwapLoading === false && swapHash) {
-      setSwapHash(undefined);
+    if (isApproving || isSwapping) {
+      setTxStatus('pending');
+    } else if (isApprovalLoading || isSwapLoading) {
+      setTxStatus('mining');
+    } else if (approvalStatus === 'success' || swapStatus === 'success') {
+      setTxStatus('success');
+    } else if (approvalStatus === 'error' || swapStatus === 'error') {
+      setTxStatus('error');
     }
-  }, [isSwapLoading, swapHash]);
+  }, [isApproving, isSwapping, isApprovalLoading, isSwapLoading, approvalStatus, swapStatus]);
+
+  // When swap transaction completes, update state
+  useEffect(() => {
+    if (swapStatus === "success" && swapHash) {
+      console.log("Swap transaction confirmed successfully");
+      // Keep the hash for transaction history
+      toast.success("Swap completed successfully!");
+    } else if (swapStatus === "error" && swapHash) {
+      console.error("Swap transaction failed");
+      setError("Swap transaction failed. Please try again.");
+      // Keep the hash for reference
+    }
+  }, [swapStatus, swapHash]);
 
   // Function to find the best pool
   const findBestPool = useCallback(async () => {
@@ -370,7 +413,7 @@ export function SwapComponent() {
     }
   }, [bestPool, amount, estimateOutput]);
 
-  // Handle swap execution
+  // Handle swap execution with proper transaction lifecycle management
   const handleSwap = async () => {
     if (!isConnected || !bestPool || !address) return;
 
@@ -380,29 +423,31 @@ export function SwapComponent() {
 
       if (approvalNeeded) {
         try {
-          // In wagmi v2, writeContract returns void, not a hash
-          // We need to listen for the transaction hash separately
+          // The hash will be captured in the onSuccess callback
           await approve({
             address: USDC_ADDRESS as Address,
             abi: ERC20_ABI,
             functionName: "approve",
             args: [ROUTER_ADDRESS as Address, swapAmount],
           });
-
-          // Note: In a real implementation, we would need to listen for the transaction hash
-          // For now, we'll just wait for the approval to be detected by the allowance check
-          console.log("Approval transaction submitted");
+          
+          // Transaction submitted - UI will update via status tracking
+          console.log("Approval transaction submitted, waiting for confirmation...");
+          // Don't setIsLoading(false) here - we want to keep the loading state until confirmed
+          
+          // Early return but keep loading state active
+          return;
         } catch (err: any) {
           console.error("Approval error:", err);
           setError(err.message || "Failed to approve USDC");
+          setIsLoading(false);
+          return;
         }
-        return;
       }
 
       if (swapParams) {
         try {
-          // In wagmi v2, writeContract returns void, not a hash
-          // We need to listen for the transaction hash separately
+          // The hash will be captured in the onSuccess callback
           await swap({
             address: ROUTER_ADDRESS as Address,
             abi: UNISWAP_V3_ROUTER_ABI,
@@ -410,25 +455,42 @@ export function SwapComponent() {
             args: [swapParams],
           });
 
-          // Note: In a real implementation, we would need to listen for the transaction hash
-          // For now, we'll just wait for the transaction to be detected
-          console.log("Swap transaction submitted");
+          // Transaction submitted - UI will update via status tracking
+          console.log("Swap transaction submitted, waiting for confirmation...");
+          // Don't setIsLoading(false) here - we want to keep the UI in loading state
         } catch (err: any) {
           console.error("Swap error:", err);
           setError(err.message || "Failed to execute swap");
+          setIsLoading(false);
         }
       }
     } catch (err: any) {
       console.error("Transaction error:", err);
       setError(err.message || "Failed to execute transaction");
-    } finally {
       setIsLoading(false);
     }
+    // Note: We're not using finally{setIsLoading(false)} anymore because
+    // we want the loading state to persist until transaction confirmation
   };
 
+  // Determine the current pending state for UI
   const isPending =
     isApproving || isSwapping || isApprovalLoading || isSwapLoading;
+  
+  // Track the current transaction hash for display
   const currentTxHash = approvalHash || swapHash;
+  
+  // Get transaction status message for UI
+  const getStatusMessage = () => {
+    if (isApproving) return "Submitting approval transaction...";
+    if (isApprovalLoading) return "Confirming approval on blockchain...";
+    if (isSwapping) return "Submitting swap transaction...";
+    if (isSwapLoading) return "Confirming swap on blockchain...";
+    if (approvalStatus === "success" && currentTxHash === approvalHash) return "Approval confirmed! Ready to swap.";
+    if (swapStatus === "success") return "Swap completed successfully!";
+    if (approvalStatus === "error" || swapStatus === "error") return "Transaction failed. Please try again.";
+    return "";
+  };
 
   return (
     <div className="max-w-xl mx-auto">
@@ -449,7 +511,7 @@ export function SwapComponent() {
               className="bg-transparent border-none text-white text-2xl placeholder:text-white/50"
             />
             <div className="mt-1 text-xs text-white/60">
-              On Base Chain: {USDC_ADDRESS && formatAddress(USDC_ADDRESS)}
+              On Lens Chain: {USDC_ADDRESS && formatAddress(USDC_ADDRESS)}
             </div>
           </div>
 
@@ -553,13 +615,20 @@ export function SwapComponent() {
                 <span className="text-cyan-400">Transaction Hash:</span>
               </div>
               <a
-                href={getExplorerLink(currentTxHash, ChainId.BASE)}
+                href={getExplorerLink(currentTxHash, ChainId.LENS)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-cyan-400 hover:underline break-all"
               >
                 {currentTxHash}
               </a>
+              {txStatus !== 'none' && (
+                <div className="mt-2 text-sm">
+                  <span className={`${txStatus === 'success' ? 'text-green-400' : txStatus === 'error' ? 'text-red-400' : 'text-yellow-400'}`}>
+                    {getStatusMessage()}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>

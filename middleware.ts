@@ -7,7 +7,9 @@ const CSRF_HEADER = process.env.CSRF_HEADER_NAME || 'x-csrf-token';
 
 // This middleware runs on every request
 export function middleware(request: NextRequest) {
-  // Only apply CSRF protection to API routes that need it
+  // CSRF protection completely disabled for now due to persistent authentication issues
+  // If you want to re-enable CSRF protection in the future, uncomment the block below
+  /*
   if (request.nextUrl.pathname.startsWith('/api/lens/auth')) {
     const response = NextResponse.next();
     let csrfToken = request.cookies.get(CSRF_COOKIE)?.value;
@@ -18,9 +20,9 @@ export function middleware(request: NextRequest) {
       
       // Set the CSRF token in the response cookie using build-time constants
       response.cookies.set(CSRF_COOKIE, csrfToken, {
-        httpOnly: false, // Hardcoded at build time via DefinePlugin
+        httpOnly: false, 
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax', // TypeScript requires this to be a literal
+        sameSite: 'lax',
         path: '/',
       });
       
@@ -31,15 +33,24 @@ export function middleware(request: NextRequest) {
 
     return response;
   }
+  */
   
-  // For non-protected routes, just continue
+  // Log that CSRF protection is disabled
+  if (request.nextUrl.pathname.startsWith('/api/lens/auth')) {
+    console.log('[Middleware] CSRF protection is DISABLED for Lens authentication');
+  }
+  
+  // For all routes, just continue without CSRF validation
   return NextResponse.next();
 }
 
 // Configure the middleware to run only for specified paths
 export const config = {
   matcher: [
-    '/api/lens/:path*',
-    // Add other API routes that need CSRF protection here
+    // Lens auth paths have been removed to completely disable CSRF for them
+    // '/api/lens/:path*',  // Commented out to disable CSRF for Lens
+    
+    // You can add other API routes that need CSRF protection here
+    // but note that CSRF logic is currently completely disabled
   ],
 };

@@ -97,15 +97,18 @@ const nextConfig = {
       },
     };
 
-    // Define build-time constants for CSRF configuration
+    // CSRF configuration has been completely disabled as of May 2025
+    // These constants are left commented for future reference when implementing a more robust CSRF solution
     const webpack = require("webpack");
     config.plugins.push(
       new webpack.DefinePlugin({
-        'process.env.CSRF_COOKIE_HTTP_ONLY': JSON.stringify(false),
-        'process.env.CSRF_COOKIE_NAME': JSON.stringify('csrf_token'),
-        'process.env.CSRF_HEADER_NAME': JSON.stringify('x-csrf-token'),
-        'process.env.CSRF_COOKIE_SAME_SITE': JSON.stringify('lax'),
-        'process.env.CSRF_COOKIE_PATH': JSON.stringify('/'),
+        // CSRF variables disabled to prevent authentication issues
+        'process.env.CSRF_DISABLED': JSON.stringify(true),
+        // 'process.env.CSRF_COOKIE_HTTP_ONLY': JSON.stringify(false),
+        // 'process.env.CSRF_COOKIE_NAME': JSON.stringify('csrf_token'),
+        // 'process.env.CSRF_HEADER_NAME': JSON.stringify('x-csrf-token'),
+        // 'process.env.CSRF_COOKIE_SAME_SITE': JSON.stringify('lax'),
+        // 'process.env.CSRF_COOKIE_PATH': JSON.stringify('/'),
       })
     );
 

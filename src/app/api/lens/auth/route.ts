@@ -3,8 +3,17 @@ import { getAddress } from "viem";
 import { cookies } from "next/headers";
 import { nanoid } from "nanoid";
 
-const CSRF_COOKIE = "csrf_token";
-const CSRF_HEADER = "x-csrf-token";
+// Use build-time constants injected by webpack DefinePlugin
+const CSRF_COOKIE = process.env.CSRF_COOKIE_NAME || "csrf_token";
+const CSRF_HEADER = process.env.CSRF_HEADER_NAME || "x-csrf-token";
+
+// Cookie options defined at build time
+const COOKIE_OPTIONS = {
+  httpOnly: false, // Hardcoded at build time via DefinePlugin
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+};
 
 // Handle CORS preflight requests
 export async function OPTIONS(request: NextRequest) {
@@ -198,13 +207,12 @@ export async function POST(request: NextRequest) {
         }
       );
 
-      // Set CSRF cookie in response
-      jsonResponse.cookies.set(CSRF_COOKIE, csrfToken, {
-        httpOnly: false, // Changed from true to false to make it accessible to JavaScript
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-      });
+      // Use cookie settings from config to ensure consistency
+      jsonResponse.cookies.set(CSRF_COOKIE, csrfToken, COOKIE_OPTIONS);
+      
+      // Log for debugging
+      console.log(`[Lens Auth] Set CSRF cookie (${CSRF_COOKIE}) with options:`, 
+        JSON.stringify({...COOKIE_OPTIONS, value: "[redacted]"}));
 
       return jsonResponse;
     } catch (fetchError) {
@@ -253,13 +261,12 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // Set CSRF cookie even in error response
-    errorResponse.cookies.set(CSRF_COOKIE, csrfToken, {
-      httpOnly: false, // Changed from true to false to make it accessible to JavaScript
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-    });
+    // Use cookie settings from config to ensure consistency
+    errorResponse.cookies.set(CSRF_COOKIE, csrfToken, COOKIE_OPTIONS);
+    
+    // Log for debugging
+    console.log(`[Lens Auth Error Response] Set CSRF cookie (${CSRF_COOKIE}) with options:`, 
+      JSON.stringify({...COOKIE_OPTIONS, value: "[redacted]"}));
 
     return errorResponse;
   }

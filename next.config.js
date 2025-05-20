@@ -1,6 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Explicit cookie configuration
+  serverRuntimeConfig: {
+    // Config that is only available on the server
+    cookieOptions: {
+      httpOnly: false, // Allow JavaScript access to cookies
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    },
+  },
+  publicRuntimeConfig: {
+    // Config that is available on both server and client
+    csrfCookieName: 'csrf_token',
+    csrfHeaderName: 'x-csrf-token',
+  },
   // Enhanced image configuration
   images: {
     remotePatterns: [
@@ -81,6 +96,18 @@ const nextConfig = {
         },
       },
     };
+
+    // Define build-time constants for CSRF configuration
+    const webpack = require("webpack");
+    config.plugins.push(
+      new webpack.DefinePlugin({
+        'process.env.CSRF_COOKIE_HTTP_ONLY': JSON.stringify(false),
+        'process.env.CSRF_COOKIE_NAME': JSON.stringify('csrf_token'),
+        'process.env.CSRF_HEADER_NAME': JSON.stringify('x-csrf-token'),
+        'process.env.CSRF_COOKIE_SAME_SITE': JSON.stringify('lax'),
+        'process.env.CSRF_COOKIE_PATH': JSON.stringify('/'),
+      })
+    );
 
     // Polyfill Node.js modules for browser environment
     if (!isServer) {

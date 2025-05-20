@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { getAddress } from "viem";
-import { getCsrfTokenFromCookie } from "../csrf-client";
+// CSRF validation completely disabled - no longer importing
 
 /**
  * Service for handling Lens Protocol authentication through our backend
@@ -42,23 +42,15 @@ export class LensAuthService {
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       try {
-        // Get CSRF token from cookie
-        const csrfToken = getCsrfTokenFromCookie();
-
-        // Log headers for debugging
-        console.log("Making auth request with headers:", {
-          "Content-Type": "application/json",
-          "x-csrf-token": csrfToken ? "present" : "missing",
-        });
-
+        // CSRF validation completely disabled
+        console.log("Making auth request without CSRF validation");
+        
         // Using server-side API route for security
         const response = await fetch("/api/lens/auth", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            // Always include the header even if token is null
-            // This helps with debugging and our modified backend will handle it
-            "x-csrf-token": csrfToken || "not-available",
+            // No longer including CSRF tokens - validation disabled
           },
           credentials: "include", // Important for CSRF cookie handling
           body: JSON.stringify({

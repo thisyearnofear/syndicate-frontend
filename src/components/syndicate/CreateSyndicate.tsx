@@ -109,31 +109,68 @@ function CauseSelector({
 // Add this function to parse and handle errors
 const getErrorMessage = (error: any): string => {
   console.error("Error details:", error);
+  
+  const errorMsg = error?.message?.toLowerCase() || "";
 
-  // Check for user rejection messages
+  // User rejection messages
   if (
-    error?.message?.includes("User rejected") ||
-    error?.message?.includes("User denied") ||
-    error?.message?.includes("user rejected") ||
-    error?.message?.includes("MetaMask Tx Signature: User denied")
+    errorMsg.includes("user rejected") ||
+    errorMsg.includes("user denied") ||
+    errorMsg.includes("signature rejected") ||
+    errorMsg.includes("metamask tx signature: user denied")
   ) {
     return "Transaction was canceled. Please try again when you're ready to approve the transaction.";
   }
 
-  // Check for gas errors
-  if (error?.message?.includes("insufficient funds")) {
+  // Gas and balance errors
+  if (errorMsg.includes("insufficient funds") || errorMsg.includes("insufficient balance")) {
     return "You don't have enough GHO tokens to complete this transaction. Please add GHO to your wallet.";
   }
 
-  // Check for network errors
+  // Smart contract validation errors
+  if (errorMsg.includes("invalid percentage") || errorMsg.includes("percentage must be between")) {
+    return "The cause percentage must be between 5% and 50% due to smart contract requirements.";
+  }
+  
+  if (errorMsg.includes("invalid address") || errorMsg.includes("invalid recipient")) {
+    return "The cause address you entered appears to be invalid. Please check and try again.";
+  }
+  
+  if (errorMsg.includes("transaction reverted") || errorMsg.includes("reverted")) {
+    // Extract error reason if available
+    const reasonMatch = errorMsg.match(/reason: (["'])(.+?)\1/);
+    if (reasonMatch && reasonMatch[2]) {
+      return `Transaction failed: ${reasonMatch[2]}. Please check your inputs and try again.`;
+    }
+    return "Transaction failed. There might be an issue with your inputs or the blockchain network is congested.";
+  }
+
+  // Network errors
   if (
-    error?.message?.includes("network") ||
-    error?.message?.includes("disconnected")
+    errorMsg.includes("network") ||
+    errorMsg.includes("disconnected") ||
+    errorMsg.includes("connection") ||
+    errorMsg.includes("timeout")
   ) {
     return "Network error. Please check your connection and try again.";
   }
 
-  // For any other errors, show a more generic message
+  // Timeout errors
+  if (errorMsg.includes("timeout")) {
+    return "The transaction is taking too long to confirm. The network might be congested. You can check the explorer for updates.";
+  }
+  
+  // Chain-specific errors
+  if (errorMsg.includes("chain id") || errorMsg.includes("wrong chain")) {
+    return "You're connected to the wrong blockchain network. Please switch to the Lens network and try again.";
+  }
+  
+  // For any other errors with detailed contract info, simplify it
+  if (errorMsg.includes("contract function") && errorMsg.length > 100) {
+    return "The transaction failed due to a contract error. Please check your inputs and try again.";
+  }
+
+  // For any other errors, show a more readable message if possible, otherwise the original
   return error?.message || "Something went wrong. Please try again.";
 };
 

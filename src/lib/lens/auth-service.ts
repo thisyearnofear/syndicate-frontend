@@ -51,7 +51,11 @@ export class LensAuthService {
         const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
         
         // Use the specific production backend URL from next.config.js when not in development
-        const prodBackendUrl = process.env.NEXT_PUBLIC_AUTH_BACKEND_URL || 'https://site--syndicate-backend--wxs584h67csv.code.run/';
+        // Remove any trailing slash to avoid double-slash issues
+        let prodBackendUrl = process.env.NEXT_PUBLIC_AUTH_BACKEND_URL || 'https://site--syndicate-backend--wxs584h67csv.code.run';
+        if (prodBackendUrl.endsWith('/')) {
+          prodBackendUrl = prodBackendUrl.slice(0, -1);
+        }
         
         const apiBaseUrl = isDevelopment 
           ? 'http://localhost:3003' 

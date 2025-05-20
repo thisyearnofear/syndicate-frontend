@@ -252,8 +252,9 @@ export function useSyndicateContracts(): SyndicateHookResult {
           throw new Error("All fields are required");
         }
 
-        if (causePercentage < 0 || causePercentage > 100) {
-          throw new Error("Cause percentage must be between 0 and 100");
+        // The smart contract only allows percentages between 5% and 50%
+        if (causePercentage < 5 || causePercentage > 50) {
+          throw new Error("Cause percentage must be between 5% and 50% due to smart contract limitations");
         }
 
 
@@ -484,29 +485,42 @@ export function useSyndicateContracts(): SyndicateHookResult {
 
               // Check for common revert reasons
               const errorMessage = simError?.message?.toLowerCase() || "";
+              
+              // Create more user-friendly error messages
               if (errorMessage.includes("insufficient allowance")) {
                 throw new Error(
-                  "Transaction failed: Insufficient allowance for token transfer"
+                  "You don't have enough token allowance. Please approve more tokens before trying again."
                 );
-              } else if (errorMessage.includes("insufficient balance")) {
-                throw new Error("Transaction failed: Insufficient balance");
-              } else if (errorMessage.includes("invalid percentage")) {
+              } else if (errorMessage.includes("insufficient balance") || errorMessage.includes("insufficient funds")) {
+                throw new Error("Your wallet doesn't have enough GHO to complete this transaction. Please add more GHO to your wallet.");
+              } else if (errorMessage.includes("invalid percentage") || errorMessage.includes("percentage")) {
                 throw new Error(
-                  "Transaction failed: Invalid cause percentage. Must be between 5% and 50%"
+                  "The percentage you chose isn't allowed. Please use a value between 5% and 50%."
                 );
+              } else if (errorMessage.includes("invalid address") || errorMessage.includes("invalid recipient")) {
+                throw new Error("The cause address you entered isn't valid. Please check the address and try again.");
               } else if (errorMessage.includes("bootloader")) {
-                // Handle bootloader specific errors
+                // Handle bootloader specific errors with a simpler message
                 throw new Error(
-                  "Transaction failed at the network level. This might be due to:\n" +
-                    "1. Network congestion\n" +
-                    "2. Incorrect gas settings\n" +
-                    "3. Contract state requirements not met\n" +
-                    `Please try again or check the explorer: https://explorer.lens.xyz/tx/${txHash}`
+                  "The network seems busy right now. Your transaction couldn't be processed. Please try again in a few minutes."
+                );
+              } else if (errorMessage.includes("reverted")) {
+                // Try to extract a more specific message if available
+                const reasonMatch = errorMessage.match(/reason: ['"](.+?)['"]/i);
+                if (reasonMatch && reasonMatch[1]) {
+                  throw new Error(`Transaction failed: ${reasonMatch[1]}. Please check your inputs.`);
+                }
+                throw new Error(
+                  "Your transaction was rejected by the smart contract. There might be an issue with your inputs."
+                );
+              } else if (errorMessage.includes("gas")) {
+                throw new Error(
+                  "There was an issue with the transaction's gas. Try again with adjusted settings or wait for network congestion to decrease."
                 );
               } else {
+                // For all other cases, provide a cleaner error with an explorer link
                 throw new Error(
-                  `Transaction failed. Please check the explorer: https://explorer.lens.xyz/tx/${txHash}\n` +
-                    `Error: ${simError?.message || "Unknown error"}`
+                  `Something went wrong with your transaction. You can check the details on the explorer.`
                 );
               }
             }

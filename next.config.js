@@ -155,6 +155,7 @@ const nextConfig = {
       process.env.NEXT_PUBLIC_AUTH_BACKEND_URL ||
       "https://site--syndicate-backend--wxs584h67csv.code.run/",
     // For the backend to allow CORS from our frontend
+    // Important: Do NOT include a trailing slash - must exactly match the Origin header
     FRONTEND_URL:
       process.env.NEXT_PUBLIC_APP_URL || "https://syndicate-lens.vercel.app",
     // Hardcoded for hackathon purpose only - not for production use

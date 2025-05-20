@@ -149,17 +149,16 @@ const nextConfig = {
     NEXT_PUBLIC_APP_URL:
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     NEXT_PUBLIC_ENVIRONMENT: process.env.NEXT_PUBLIC_ENVIRONMENT || "mainnet",
-    // Backend URLs for authentication
-    AUTH_BACKEND_URL:
-      process.env.AUTH_BACKEND_URL ||
-      "https://site--syndicate-backend--wxs584h67csv.code.run/",
+    // Backend URLs for authentication - hardcoded for hackathon
+    AUTH_BACKEND_URL: "https://site--syndicate-backend--wxs584h67csv.code.run/",
     NEXT_PUBLIC_AUTH_BACKEND_URL:
       process.env.NEXT_PUBLIC_AUTH_BACKEND_URL ||
       "https://site--syndicate-backend--wxs584h67csv.code.run/",
     // For the backend to allow CORS from our frontend
     FRONTEND_URL:
       process.env.NEXT_PUBLIC_APP_URL || "https://syndicate-lens.vercel.app",
-    SHARED_SECRET: process.env.SHARED_SECRET || "your-shared-secret-here",
+    // Hardcoded for hackathon purpose only - not for production use
+    SHARED_SECRET: "5010728756",
     NEXT_PUBLIC_AUTH_BACKEND_SECRET:
       process.env.NEXT_PUBLIC_AUTH_BACKEND_SECRET || "your-shared-secret-here",
     // Use dedicated RPC providers instead of public endpoints

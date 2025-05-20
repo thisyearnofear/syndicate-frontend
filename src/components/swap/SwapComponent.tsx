@@ -27,10 +27,12 @@ const WGHO_ADDRESS = "0x6bDc36E20D267Ff0dd6097799f82e78907105e2F"; // Wrapped GH
 const ROUTER_ADDRESS = "0xE592427A0AEce92De3Edee1F18E0157C05861564"; // Uniswap V3 Router
 const LENS_CHAIN_ID = 232;
 
-// Use the API directly without client class
+// Use our proxy to avoid DNS resolution issues
 const getTopPoolsByTvl = async (tokenA: string, tokenB: string) => {
   try {
-    const response = await fetch(`${OKU_API_ENDPOINT}/v1/pools/top`, {
+    console.log('Using proxy to fetch top pools');
+    // Use our local proxy instead of calling the Oku API directly
+    const response = await fetch(`/api/oku-proxy?path=v1/pools/top`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -56,7 +58,9 @@ const getTopPoolsByTvl = async (tokenA: string, tokenB: string) => {
 
 const getQuote = async (tokenIn: string, tokenOut: string, amount: string, poolId: string, slippageTolerance: number) => {
   try {
-    const response = await fetch(`${OKU_API_ENDPOINT}/v1/quote`, {
+    console.log('Using proxy to fetch quote');
+    // Use our local proxy instead of calling the Oku API directly
+    const response = await fetch(`/api/oku-proxy?path=v1/quote`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

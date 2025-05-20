@@ -47,8 +47,12 @@ export class LensAuthService {
         
         // Get the API base URL from environment variables or use a fallback
         // This ensures we're using the correct URL in both development and production
-        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin;
-        console.log(`Using API base URL: ${apiBaseUrl}`);
+        // In development, we need to point to port 3003 where the backend is running
+        const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
+        const apiBaseUrl = isDevelopment 
+          ? 'http://localhost:3003' 
+          : (process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin);
+        console.log(`Using API base URL: ${apiBaseUrl} (Development mode: ${isDevelopment})`);
         
         // Construct the full path to ensure it works in all environments
         const authUrl = `${apiBaseUrl}/api/lens/auth`;

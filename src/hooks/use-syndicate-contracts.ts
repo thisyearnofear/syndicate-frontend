@@ -22,6 +22,7 @@ import {
 import { SyndicateRegistryABI } from "@/lib/cross-chain/abis/SyndicateRegistry";
 import { SyndicateFactoryABI } from "@/lib/cross-chain/abis/SyndicateFactory";
 import { useAcrossAppSdk } from "@/hooks/use-across-app-sdk";
+import { createSpecializedClient } from "@/lib/cross-chain/specialized-rpc";
 
 export interface SyndicateHookResult {
   userSyndicates: SyndicateInfo[];
@@ -222,14 +223,29 @@ export function useSyndicateContracts(): SyndicateHookResult {
     ): Promise<string | null> => {
       if (!walletClient || !address) return null;
 
-      try {
-        setIsCreatingSyndicate(true);
-        setCreateSyndicateError(null);
+      setIsCreatingSyndicate(true);
+      setCreateSyndicateError(null);
 
+      try {
+        // Use specialized client for syndicate creation that uses the public Lens RPC
+        // This is needed because the Alchemy endpoint gives 405 errors for eth_getBlockByNumber
+        console.log('Using specialized RPC client for syndicate creation');
+        const lensClient = createSpecializedClient('syndicate');
+
+        // Registry and Factory addresses
         const factoryAddress = getContractAddress(
           ChainId.LENS,
           "SYNDICATE_FACTORY"
         ) as Address;
+
+        console.log("Using factory address:", factoryAddress);
+        console.log(
+          "Creating syndicate with params:",
+          name,
+          cause,
+          causeAddress,
+          causePercentage
+        );
 
         // Validate inputs
         if (!name || !cause || !causeAddress) {
@@ -240,8 +256,6 @@ export function useSyndicateContracts(): SyndicateHookResult {
           throw new Error("Cause percentage must be between 0 and 100");
         }
 
-        // Get the Lens client for gas estimation
-        const lensClient = getLensClient();
 
         // Convert percentage to basis points (5% = 500)
         const causePercentageBasisPoints = causePercentage * 100;

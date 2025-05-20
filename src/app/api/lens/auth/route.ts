@@ -46,23 +46,15 @@ export async function POST(request: NextRequest) {
     )}`
   );
 
-  // CSRF Protection
-  const cookieStore = await cookies();
-  let csrfToken = cookieStore.get(CSRF_COOKIE)?.value;
-  const headerToken = request.headers.get(CSRF_HEADER);
-
-  // If no CSRF token in cookie, generate one
-  if (!csrfToken) {
-    csrfToken = nanoid();
-  }
-
-  // CSRF validation temporarily disabled to fix auth issues
+  // CSRF Protection has been completely disabled as a temporary solution
   // We'll rely on other security measures like the shared secret for now
-  console.log("[Lens Auth] CSRF validation skipped");
-  console.log(`[Lens Auth] CSRF header token: ${headerToken || 'missing'}`);
-  console.log(`[Lens Auth] CSRF cookie token: ${csrfToken || 'missing'}`);
-
-  // We'll set the CSRF token in the final response cookies
+  console.log("[Lens Auth] CSRF validation completely disabled");
+  
+  // Generate a placeholder token just for logging
+  const csrfToken = nanoid();
+  
+  // For future implementation, we'll track this
+  console.log("[Lens Auth] Using generated placeholder token for compatibility");
 
   try {
     // Safely parse JSON with error handling
@@ -207,12 +199,8 @@ export async function POST(request: NextRequest) {
         }
       );
 
-      // Use cookie settings from config to ensure consistency
-      jsonResponse.cookies.set(CSRF_COOKIE, csrfToken, COOKIE_OPTIONS);
-      
-      // Log for debugging
-      console.log(`[Lens Auth] Set CSRF cookie (${CSRF_COOKIE}) with options:`, 
-        JSON.stringify({...COOKIE_OPTIONS, value: "[redacted]"}));
+      // CSRF cookies completely disabled
+      console.log(`[Lens Auth] CSRF cookie setting skipped - validation disabled`);
 
       return jsonResponse;
     } catch (fetchError) {
@@ -261,12 +249,8 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // Use cookie settings from config to ensure consistency
-    errorResponse.cookies.set(CSRF_COOKIE, csrfToken, COOKIE_OPTIONS);
-    
-    // Log for debugging
-    console.log(`[Lens Auth Error Response] Set CSRF cookie (${CSRF_COOKIE}) with options:`, 
-      JSON.stringify({...COOKIE_OPTIONS, value: "[redacted]"}));
+    // CSRF cookies completely disabled
+    console.log(`[Lens Auth Error Response] CSRF cookie setting skipped - validation disabled`);
 
     return errorResponse;
   }

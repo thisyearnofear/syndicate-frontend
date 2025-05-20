@@ -169,6 +169,9 @@ const nextConfig = {
     NEXT_PUBLIC_BASE_CHAIN_RPC_URL:
       process.env.NEXT_PUBLIC_BASE_CHAIN_RPC_URL ||
       "https://base-mainnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH",
+    // Oku API endpoint for swap functionality
+    NEXT_PUBLIC_OKU_API_ENDPOINT:
+      process.env.NEXT_PUBLIC_OKU_API_ENDPOINT || "https://api.oku.trade/api",
   },
 };
 

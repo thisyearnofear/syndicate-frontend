@@ -2,8 +2,8 @@
 // Utility to call the backend /authorize endpoint
 export async function authorize(account: string, signedBy: string) {
   const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
-  const sharedSecret = process.env.NEXT_PUBLIC_SHARED_SECRET || "dev_secret"; // Set this in your .env.local
+    process.env.NEXT_PUBLIC_AUTH_BACKEND_URL || "https://site--syndicate-backend--wxs584h67csv.code.run/";
+  const sharedSecret = process.env.NEXT_PUBLIC_AUTH_BACKEND_SECRET || "dev_secret"; // Set this in your .env.local
 
   const res = await fetch(`${backendUrl}/authorize`, {
     method: "POST",

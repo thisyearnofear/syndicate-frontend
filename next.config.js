@@ -119,13 +119,26 @@ const nextConfig = {
     NEXT_PUBLIC_APP_URL:
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     NEXT_PUBLIC_ENVIRONMENT: process.env.NEXT_PUBLIC_ENVIRONMENT || "mainnet",
+    // Backend URLs for authentication
+    AUTH_BACKEND_URL:
+      process.env.AUTH_BACKEND_URL ||
+      "https://site--syndicate-backend--wxs584h67csv.code.run/",
+    NEXT_PUBLIC_AUTH_BACKEND_URL:
+      process.env.NEXT_PUBLIC_AUTH_BACKEND_URL ||
+      "https://site--syndicate-backend--wxs584h67csv.code.run/",
+    SHARED_SECRET: process.env.SHARED_SECRET || "your-shared-secret-here",
+    NEXT_PUBLIC_AUTH_BACKEND_SECRET:
+      process.env.NEXT_PUBLIC_AUTH_BACKEND_SECRET || "your-shared-secret-here",
     // Use dedicated RPC providers instead of public endpoints
     NEXT_PUBLIC_LENS_MAINNET_RPC_URL:
-      "https://lens-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY", // Replace with your actual Alchemy key
+      process.env.NEXT_PUBLIC_LENS_MAINNET_RPC_URL ||
+      "https://lens-mainnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH",
     NEXT_PUBLIC_LENS_TESTNET_RPC_URL:
-      "https://lens-testnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY", // Replace with your actual Alchemy key
+      process.env.NEXT_PUBLIC_LENS_TESTNET_RPC_URL ||
+      "https://lens-testnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH",
     NEXT_PUBLIC_BASE_CHAIN_RPC_URL:
-      "https://base-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY", // Replace with your actual Alchemy key
+      process.env.NEXT_PUBLIC_BASE_CHAIN_RPC_URL ||
+      "https://base-mainnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH",
   },
 };
 

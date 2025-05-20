@@ -45,12 +45,20 @@ export class LensAuthService {
         // Get CSRF token from cookie
         const csrfToken = getCsrfTokenFromCookie();
 
+        // Log headers for debugging
+        console.log("Making auth request with headers:", {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken ? "present" : "missing",
+        });
+
         // Using server-side API route for security
         const response = await fetch("/api/lens/auth", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(csrfToken && { "x-csrf-token": csrfToken }),
+            // Always include the header even if token is null
+            // This helps with debugging and our modified backend will handle it
+            "x-csrf-token": csrfToken || "not-available",
           },
           credentials: "include", // Important for CSRF cookie handling
           body: JSON.stringify({

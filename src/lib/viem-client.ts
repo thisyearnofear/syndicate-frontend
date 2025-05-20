@@ -2,7 +2,6 @@
 
 import { createPublicClient, fallback, http } from 'viem';
 import { base } from 'viem/chains';
-import { alchemyHttp } from './alchemy-transport';
 
 // Private Alchemy RPC URL for Base chain
 const ALCHEMY_BASE_RPC_URL = 'https://base-mainnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH';
@@ -11,8 +10,8 @@ const ALCHEMY_BASE_RPC_URL = 'https://base-mainnet.g.alchemy.com/v2/zXTB8midlluE
 const client = createPublicClient({
   chain: base,
   transport: fallback([
-    // Primary: Private Alchemy RPC with custom transport
-    alchemyHttp(ALCHEMY_BASE_RPC_URL),
+    // Primary: Private Alchemy RPC
+    http(ALCHEMY_BASE_RPC_URL),
     // Fallbacks: Public RPCs
     http('https://base.llamarpc.com'),
     http('https://base.rpc.thirdweb.com'),

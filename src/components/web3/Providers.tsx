@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import React, { useEffect } from "react";
 import { createConfig, http, WagmiProvider, useChainId } from "wagmi";
-import { alchemyFallback } from "@/lib/alchemy-transport";
 import { ThemeProvider } from "next-themes";
 import { DecentProvider } from "./DecentProvider";
 import {
@@ -38,16 +37,8 @@ const wagmiConfig = createConfig(
       process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "",
     chains: appChains, // Support all chains
     transports: {
-      [CHAIN_IDS.LENS_MAINNET]: alchemyFallback(
-        LENS_MAINNET_RPC_URL,
-        "https://rpc.lens.xyz",
-        {}
-      ),
-      [CHAIN_IDS.LENS_TESTNET]: alchemyFallback(
-        LENS_TESTNET_RPC_URL,
-        "https://rpc.testnet.lens.xyz",
-        {}
-      ),
+      [CHAIN_IDS.LENS_MAINNET]: http(LENS_MAINNET_RPC_URL),
+      [CHAIN_IDS.LENS_TESTNET]: http(LENS_TESTNET_RPC_URL),
       [base.id]: http(BASE_RPC_URL),
     },
     appName: "Syndicate",

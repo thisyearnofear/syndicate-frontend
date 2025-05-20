@@ -1,8 +1,5 @@
 "use client";
 
-// Import our custom Alchemy transport
-import { alchemyFallback } from "../alchemy-transport";
-
 // Define chain IDs that work with cross-chain services
 export enum ChainId {
   ETHEREUM = 1,
@@ -290,29 +287,6 @@ export function getTokenDecimals(
 // Get RPC URL by chain ID
 export function getRpcUrl(chainId: ChainId): string {
   return CHAINS[chainId]?.rpcUrl || "";
-}
-
-// Get a transport for the given chain ID
-export function getChainTransport(chainId: ChainId) {
-  const chain = CHAINS[chainId];
-  if (!chain) return null;
-
-  const rpcUrl = chain.rpcUrl;
-
-  // Check if this is an Alchemy URL
-  if (rpcUrl.includes('alchemy.com')) {
-    // For Lens chains, use our custom Alchemy transport with fallback
-    if (chainId === ChainId.LENS) {
-      return alchemyFallback(rpcUrl, "https://rpc.lens.xyz", {});
-    } else if (chainId === ChainId.LENS_TESTNET) {
-      return alchemyFallback(rpcUrl, "https://rpc.testnet.lens.xyz", {});
-    } else if (chainId === ChainId.BASE) {
-      return alchemyFallback(rpcUrl, "https://mainnet.base.org", {});
-    }
-  }
-
-  // For non-Alchemy URLs, use the standard http transport
-  return null;
 }
 
 // Get chain name by ID

@@ -14,8 +14,7 @@ import {
   parseEther,
 } from "viem";
 import { createPublicClient, http } from "viem";
-import { ChainId, CHAINS, getChainTransport } from "@/lib/cross-chain/config";
-import { alchemyHttp } from "@/lib/alchemy-transport";
+import { ChainId, CHAINS } from "@/lib/cross-chain/config";
 import {
   getContractAddress,
   SyndicateInfo,
@@ -67,9 +66,6 @@ export function useSyndicateContracts(): SyndicateHookResult {
 
     console.log("Creating Lens client with RPC URL:", rpcUrl);
 
-    // Get the custom transport for Alchemy if available
-    const customTransport = getChainTransport(ChainId.LENS);
-
     return createPublicClient({
       chain: {
         id: ChainId.LENS,
@@ -89,7 +85,7 @@ export function useSyndicateContracts(): SyndicateHookResult {
           },
         },
       },
-      transport: customTransport || http(rpcUrl),
+      transport: http(rpcUrl),
     });
   }, []);
 

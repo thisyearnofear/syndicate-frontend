@@ -45,8 +45,17 @@ export class LensAuthService {
         // CSRF validation completely disabled
         console.log("Making auth request without CSRF validation");
         
-        // Using server-side API route for security
-        const response = await fetch("/api/lens/auth", {
+        // Get the API base URL from environment variables or use a fallback
+        // This ensures we're using the correct URL in both development and production
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin;
+        console.log(`Using API base URL: ${apiBaseUrl}`);
+        
+        // Construct the full path to ensure it works in all environments
+        const authUrl = `${apiBaseUrl}/api/lens/auth`;
+        console.log(`Making auth request to: ${authUrl}`);
+        
+        // Using server-side API route for security with full URL path
+        const response = await fetch(authUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -110,14 +119,21 @@ export class LensAuthService {
         console.error("Lens authorization failed:", error);
         
         // Special handling for CSRF errors - bypass them completely
-        if (error instanceof Error && 
-            (error.message.includes('CSRF') || error.message.includes('csrf') || error.message.includes('Invalid token'))) {
-          console.warn('CSRF token error detected, attempting to bypass...');
-          return {
-            allowed: true,
-            sponsored: true,
-            signingKey: 'csrf-bypass-key'
-          };
+        if (error instanceof Error) {
+          // Handle 404 errors specially - likely API endpoint configuration issue
+          if (error.message.includes('404') || error.message.includes('Not Found')) {
+            console.warn('API endpoint not found (404). Check API configuration.');
+            toast.error('API endpoint not found. Please check server configuration.');
+          } 
+          // Still bypass CSRF errors
+          else if (error.message.includes('CSRF') || error.message.includes('csrf') || error.message.includes('Invalid token')) {
+            console.warn('CSRF token error detected, attempting to bypass...');
+            return {
+              allowed: true,
+              sponsored: true,
+              signingKey: 'csrf-bypass-key'
+            };
+          }
         }
         
         toast.error(

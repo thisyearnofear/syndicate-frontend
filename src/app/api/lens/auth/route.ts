@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAddress } from "viem";
+import { cookies } from "next/headers";
+import { nanoid } from "nanoid";
+
+const CSRF_COOKIE = "csrf_token";
+const CSRF_HEADER = "x-csrf-token";
 
 // Handle CORS preflight requests
 export async function OPTIONS(request: NextRequest) {
@@ -7,9 +12,12 @@ export async function OPTIONS(request: NextRequest) {
     {},
     {
       headers: {
-        "Access-Control-Allow-Origin": process.env.NEXT_PUBLIC_APP_URL || "https://syndicate-lens.vercel.app",
+        "Access-Control-Allow-Origin":
+          process.env.NEXT_PUBLIC_APP_URL ||
+          "https://syndicate-lens.vercel.app",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, x-csrf-token",
+        "Access-Control-Allow-Headers":
+          "Content-Type, Authorization, x-csrf-token",
         "Access-Control-Allow-Credentials": "true",
         "Access-Control-Max-Age": "86400", // 24 hours
       },
@@ -23,12 +31,45 @@ export async function POST(request: NextRequest) {
       "user-agent"
     )}`
   );
-  console.log(
-    `[Lens Auth] Content-Type: ${request.headers.get("content-type")}`
-  );
-  console.log(
-    `[Lens Auth] Content-Length: ${request.headers.get("content-length")}`
-  );
+
+  // CSRF Protection
+  const cookieStore = await cookies();
+  let csrfToken = cookieStore.get(CSRF_COOKIE)?.value;
+  const headerToken = request.headers.get(CSRF_HEADER);
+
+  // If no CSRF token in cookie, generate one
+  if (!csrfToken) {
+    csrfToken = nanoid();
+  }
+
+  // In production, validate CSRF token
+  if (process.env.NODE_ENV === "production") {
+    if (!headerToken || headerToken !== csrfToken) {
+      console.error("[Lens Auth] CSRF token validation failed");
+      const response = NextResponse.json(
+        { error: "Invalid CSRF token" },
+        {
+          status: 403,
+          headers: {
+            "Access-Control-Allow-Origin":
+              process.env.NEXT_PUBLIC_APP_URL ||
+              "https://syndicate-lens.vercel.app",
+            "Access-Control-Allow-Credentials": "true",
+          },
+        }
+      );
+
+      // Set new CSRF token in response
+      response.cookies.set(CSRF_COOKIE, csrfToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+      });
+
+      return response;
+    }
+  }
 
   try {
     // Safely parse JSON with error handling
@@ -61,7 +102,9 @@ export async function POST(request: NextRequest) {
       role = body.role || "accountOwner"; // Default to accountOwner if not specified
 
       console.log(
-        `[Lens Auth] Extracted account: ${account}, signedBy: ${signedBy}, app: ${app}, role: ${role}`
+        `[Lens Auth] Extracted account: ${account}, signedBy: ${signedBy}, app: ${
+          app || "N/A"
+        }`
       );
     } catch (error) {
       console.error("[Lens Auth] Error parsing JSON from request:", error);
@@ -83,15 +126,9 @@ export async function POST(request: NextRequest) {
     const checksummedSignedBy = getAddress(signedBy);
     const checksummedApp = app ? getAddress(app) : undefined;
 
-    console.log(
-      `[Lens Auth] Checksummed addresses - account: ${checksummedAccount}, signedBy: ${checksummedSignedBy}, app: ${checksummedApp}`
-    );
-
     // Get environment variables (these are server-side only)
     const backendUrl = process.env.AUTH_BACKEND_URL || "http://localhost:3003";
     const sharedSecret = process.env.SHARED_SECRET;
-
-    console.log(`[Lens Auth] Using backend URL: ${backendUrl}`);
 
     if (!sharedSecret) {
       console.error("[Lens Auth] Missing SHARED_SECRET environment variable");
@@ -102,10 +139,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward request to the backend with proper authorization
-    console.log(
-      `[Lens Auth] Forwarding request to backend at ${backendUrl}/authorize`
-    );
-
     try {
       const response = await fetch(`${backendUrl}/authorize`, {
         method: "POST",
@@ -113,7 +146,9 @@ export async function POST(request: NextRequest) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${sharedSecret}`,
           // Add CORS headers
-          "Origin": process.env.NEXT_PUBLIC_APP_URL || "https://syndicate-lens.vercel.app",
+          Origin:
+            process.env.NEXT_PUBLIC_APP_URL ||
+            "https://syndicate-lens.vercel.app",
         },
         body: JSON.stringify({
           account: checksummedAccount,
@@ -121,11 +156,8 @@ export async function POST(request: NextRequest) {
           app: checksummedApp,
           role: role,
         }),
-        // Important: include credentials to send cookies
         credentials: "include",
       });
-
-      console.log(`[Lens Auth] Backend response status: ${response.status}`);
 
       if (!response.ok) {
         const errorData = await response.json().catch((err) => {
@@ -146,11 +178,6 @@ export async function POST(request: NextRequest) {
       let data;
       try {
         data = await response.json();
-        console.log(`[Lens Auth] Backend response data:`, {
-          allowed: data.allowed,
-          sponsored: data.sponsored,
-          hasSigningKey: !!data.signingKey, // Updated to use signingKey instead of appVerificationEndpoint
-        });
       } catch (error) {
         console.error(
           "[Lens Auth] Error parsing JSON from backend response:",
@@ -162,19 +189,32 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Create response with proper CORS headers
-      const jsonResponse = NextResponse.json({
-        allowed: data.allowed,
-        sponsored: data.sponsored,
-        // Include signingKey for the new app verification approach
-        ...(data.signingKey && { signingKey: data.signingKey }),
-      }, {
-        headers: {
-          "Access-Control-Allow-Origin": process.env.NEXT_PUBLIC_APP_URL || "https://syndicate-lens.vercel.app",
-          "Access-Control-Allow-Credentials": "true",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization, x-csrf-token",
+      // Create response with proper CORS headers and set CSRF cookie
+      const jsonResponse = NextResponse.json(
+        {
+          allowed: data.allowed,
+          sponsored: data.sponsored,
+          ...(data.signingKey && { signingKey: data.signingKey }),
+        },
+        {
+          headers: {
+            "Access-Control-Allow-Origin":
+              process.env.NEXT_PUBLIC_APP_URL ||
+              "https://syndicate-lens.vercel.app",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers":
+              "Content-Type, Authorization, x-csrf-token",
+          },
         }
+      );
+
+      // Set CSRF cookie in response
+      jsonResponse.cookies.set(CSRF_COOKIE, csrfToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
       });
 
       return jsonResponse;
@@ -185,13 +225,22 @@ export async function POST(request: NextRequest) {
         {
           status: 503,
           headers: {
-            "Access-Control-Allow-Origin": process.env.NEXT_PUBLIC_APP_URL || "https://syndicate-lens.vercel.app",
+            "Access-Control-Allow-Origin":
+              process.env.NEXT_PUBLIC_APP_URL ||
+              "https://syndicate-lens.vercel.app",
             "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization, x-csrf-token",
-          }
+          },
         }
       );
+
+      // Set CSRF cookie even in error response
+      errorResponse.cookies.set(CSRF_COOKIE, csrfToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+      });
+
       return errorResponse;
     }
   } catch (error) {
@@ -201,13 +250,22 @@ export async function POST(request: NextRequest) {
       {
         status: 500,
         headers: {
-          "Access-Control-Allow-Origin": process.env.NEXT_PUBLIC_APP_URL || "https://syndicate-lens.vercel.app",
+          "Access-Control-Allow-Origin":
+            process.env.NEXT_PUBLIC_APP_URL ||
+            "https://syndicate-lens.vercel.app",
           "Access-Control-Allow-Credentials": "true",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization, x-csrf-token",
-        }
+        },
       }
     );
+
+    // Set CSRF cookie even in error response
+    errorResponse.cookies.set(CSRF_COOKIE, csrfToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+
     return errorResponse;
   }
 }

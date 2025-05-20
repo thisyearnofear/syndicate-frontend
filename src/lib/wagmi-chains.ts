@@ -6,9 +6,8 @@ export const lensMainnet = chains.mainnet;
 export const lensTestnet = chains.testnet;
 
 // Default chain based on environment, but this will be overridden by wallet connection
-const defaultIsTestnet =
-  process.env.NEXT_PUBLIC_ENVIRONMENT === "development" ||
-  process.env.NEXT_PUBLIC_ENVIRONMENT === "testnet";
+const ENV = process.env.NEXT_PUBLIC_ENVIRONMENT || "mainnet";
+const defaultIsTestnet = ENV === "development" || ENV === "testnet";
 export const defaultLensChain = defaultIsTestnet ? lensTestnet : lensMainnet;
 
 // Re-export Base chain for convenience

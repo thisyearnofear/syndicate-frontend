@@ -10,6 +10,7 @@ import {
   getLensChainById,
   isLensChain,
 } from "../wagmi-chains";
+import { alchemyHttp, alchemyFallback } from "../alchemy-transport";
 
 const isServer = typeof window === "undefined";
 const isStaticGeneration = process.env.NEXT_PHASE === "phase-production-build";
@@ -106,9 +107,23 @@ const getOrCreatePublicClient = () => {
 
 // Function to get the current viem public client based on active chain
 export const getCurrentViemPublicClient = () => {
+  // Check if the active RPC URL is an Alchemy URL
+  const isAlchemyUrl = activeRpcUrl.includes('alchemy.com');
+
+  // Use the appropriate transport based on the URL
+  const transport = isAlchemyUrl
+    ? alchemyFallback(
+        activeRpcUrl,
+        activeChain.id === CHAIN_IDS.LENS_MAINNET
+          ? "https://rpc.lens.xyz"
+          : "https://rpc.testnet.lens.xyz",
+        {}
+      )
+    : http(activeRpcUrl);
+
   return createPublicClient({
     chain: activeChain,
-    transport: http(activeRpcUrl),
+    transport,
   });
 };
 
@@ -117,9 +132,23 @@ export const lensViemPublicClient = getCurrentViemPublicClient();
 
 // Create wallet client factory that uses the active chain
 export const createLensWalletClient = (account?: `0x${string}`) => {
+  // Check if the active RPC URL is an Alchemy URL
+  const isAlchemyUrl = activeRpcUrl.includes('alchemy.com');
+
+  // Use the appropriate transport based on the URL
+  const transport = isAlchemyUrl
+    ? alchemyFallback(
+        activeRpcUrl,
+        activeChain.id === CHAIN_IDS.LENS_MAINNET
+          ? "https://rpc.lens.xyz"
+          : "https://rpc.testnet.lens.xyz",
+        {}
+      )
+    : http(activeRpcUrl);
+
   return createWalletClient({
     chain: activeChain,
-    transport: http(activeRpcUrl),
+    transport,
     account,
   });
 };
@@ -127,19 +156,25 @@ export const createLensWalletClient = (account?: `0x${string}`) => {
 // Static clients for specific chains when needed
 export const lensMainnetPublicClient = createPublicClient({
   chain: lensMainnet,
-  transport: http(MAINNET_RPC_URL),
+  transport: MAINNET_RPC_URL.includes('alchemy.com')
+    ? alchemyFallback(MAINNET_RPC_URL, "https://rpc.lens.xyz", {})
+    : http(MAINNET_RPC_URL),
 });
 
 export const lensTestnetPublicClient = createPublicClient({
   chain: lensTestnet,
-  transport: http(TESTNET_RPC_URL),
+  transport: TESTNET_RPC_URL.includes('alchemy.com')
+    ? alchemyFallback(TESTNET_RPC_URL, "https://rpc.testnet.lens.xyz", {})
+    : http(TESTNET_RPC_URL),
 });
 
 // Create environment-specific wallet clients
 export const createLensMainnetWalletClient = (account?: `0x${string}`) => {
   return createWalletClient({
     chain: lensMainnet,
-    transport: http(MAINNET_RPC_URL),
+    transport: MAINNET_RPC_URL.includes('alchemy.com')
+      ? alchemyFallback(MAINNET_RPC_URL, "https://rpc.lens.xyz", {})
+      : http(MAINNET_RPC_URL),
     account,
   });
 };
@@ -147,7 +182,9 @@ export const createLensMainnetWalletClient = (account?: `0x${string}`) => {
 export const createLensTestnetWalletClient = (account?: `0x${string}`) => {
   return createWalletClient({
     chain: lensTestnet,
-    transport: http(TESTNET_RPC_URL),
+    transport: TESTNET_RPC_URL.includes('alchemy.com')
+      ? alchemyFallback(TESTNET_RPC_URL, "https://rpc.testnet.lens.xyz", {})
+      : http(TESTNET_RPC_URL),
     account,
   });
 };

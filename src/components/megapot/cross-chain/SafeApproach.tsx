@@ -17,6 +17,8 @@ import {
   ACROSS_BRIDGE_BASE,
 } from "@/lib/cross-chain/config";
 import { useAcrossApi } from "@/hooks/use-across-api";
+import { Card } from "@/components/ui/data-display/card";
+import { formatAddress, getExplorerLink } from "@/lib/utils";
 
 interface SafeApproachProps {
   sourceChainId: ChainId;
@@ -362,20 +364,34 @@ export function SafeApproach({
                 <span className="inline-block w-2 h-2 rounded-full bg-cyan-400 mt-1.5 flex-shrink-0"></span>
                 <span>
                   Lens Chain:{" "}
-                  <span className="font-mono text-white/80">
-                    {SYNDICATE_TREASURY_ADDRESS.slice(0, 6)}...
-                    {SYNDICATE_TREASURY_ADDRESS.slice(-4)}
-                  </span>
+                  <a
+                    href={getExplorerLink(
+                      SYNDICATE_TREASURY_ADDRESS,
+                      ChainId.LENS
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-white/80 hover:text-cyan-400 transition-colors"
+                  >
+                    {formatAddress(SYNDICATE_TREASURY_ADDRESS)}
+                  </a>
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="inline-block w-2 h-2 rounded-full bg-cyan-400 mt-1.5 flex-shrink-0"></span>
                 <span>
                   Base Chain:{" "}
-                  <span className="font-mono text-white/80">
-                    {SYNDICATE_REGISTRY_ADDRESS.slice(0, 6)}...
-                    {SYNDICATE_REGISTRY_ADDRESS.slice(-4)}
-                  </span>
+                  <a
+                    href={getExplorerLink(
+                      SYNDICATE_REGISTRY_ADDRESS,
+                      ChainId.BASE
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-white/80 hover:text-cyan-400 transition-colors"
+                  >
+                    {formatAddress(SYNDICATE_REGISTRY_ADDRESS)}
+                  </a>
                 </span>
               </li>
             </ul>
@@ -418,20 +434,28 @@ export function SafeApproach({
                 <span className="inline-block w-2 h-2 rounded-full bg-cyan-400 mt-1.5 flex-shrink-0"></span>
                 <span>
                   GHO (Lens):{" "}
-                  <span className="font-mono text-white/80">
-                    {GHO_ADDRESS_LENS.slice(0, 6)}...
-                    {GHO_ADDRESS_LENS.slice(-4)}
-                  </span>
+                  <a
+                    href={getExplorerLink(GHO_ADDRESS_LENS, ChainId.LENS)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-white/80 hover:text-cyan-400 transition-colors"
+                  >
+                    {formatAddress(GHO_ADDRESS_LENS)}
+                  </a>
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="inline-block w-2 h-2 rounded-full bg-cyan-400 mt-1.5 flex-shrink-0"></span>
                 <span>
                   USDC (Base):{" "}
-                  <span className="font-mono text-white/80">
-                    {USDC_ADDRESS_BASE.slice(0, 6)}...
-                    {USDC_ADDRESS_BASE.slice(-4)}
-                  </span>
+                  <a
+                    href={getExplorerLink(USDC_ADDRESS_BASE, ChainId.BASE)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-white/80 hover:text-cyan-400 transition-colors"
+                  >
+                    {formatAddress(USDC_ADDRESS_BASE)}
+                  </a>
                 </span>
               </li>
             </ul>

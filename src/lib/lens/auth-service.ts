@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 import { getAddress } from "viem";
+import { getCsrfTokenFromCookie } from "../csrf-client";
 
 /**
  * Service for handling Lens Protocol authentication through our backend
@@ -38,15 +39,20 @@ export class LensAuthService {
 
       // Create an abort controller with timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       try {
+        // Get CSRF token from cookie
+        const csrfToken = getCsrfTokenFromCookie();
+
         // Using server-side API route for security
         const response = await fetch("/api/lens/auth", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            ...(csrfToken && { "x-csrf-token": csrfToken }),
           },
+          credentials: "include", // Important for CSRF cookie handling
           body: JSON.stringify({
             account: checksummedAccount,
             signedBy: checksummedSignedBy,

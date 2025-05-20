@@ -7,9 +7,10 @@ export async function OPTIONS(request: NextRequest) {
     {},
     {
       headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Origin": process.env.NEXT_PUBLIC_APP_URL || "https://syndicate-lens.vercel.app",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, x-csrf-token",
+        "Access-Control-Allow-Credentials": "true",
         "Access-Control-Max-Age": "86400", // 24 hours
       },
     }
@@ -111,6 +112,8 @@ export async function POST(request: NextRequest) {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${sharedSecret}`,
+          // Add CORS headers
+          "Origin": process.env.NEXT_PUBLIC_APP_URL || "https://syndicate-lens.vercel.app",
         },
         body: JSON.stringify({
           account: checksummedAccount,
@@ -118,6 +121,8 @@ export async function POST(request: NextRequest) {
           app: checksummedApp,
           role: role,
         }),
+        // Important: include credentials to send cookies
+        credentials: "include",
       });
 
       console.log(`[Lens Auth] Backend response status: ${response.status}`);
@@ -157,32 +162,52 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Create response with proper CORS headers
       const jsonResponse = NextResponse.json({
         allowed: data.allowed,
         sponsored: data.sponsored,
         // Include signingKey for the new app verification approach
         ...(data.signingKey && { signingKey: data.signingKey }),
+      }, {
+        headers: {
+          "Access-Control-Allow-Origin": process.env.NEXT_PUBLIC_APP_URL || "https://syndicate-lens.vercel.app",
+          "Access-Control-Allow-Credentials": "true",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization, x-csrf-token",
+        }
       });
 
-      // Add CORS headers to the response
-      jsonResponse.headers.set("Access-Control-Allow-Origin", "*");
       return jsonResponse;
     } catch (fetchError) {
       console.error("[Lens Auth] Error connecting to backend:", fetchError);
       const errorResponse = NextResponse.json(
         { error: "Error connecting to authorization service" },
-        { status: 503 }
+        {
+          status: 503,
+          headers: {
+            "Access-Control-Allow-Origin": process.env.NEXT_PUBLIC_APP_URL || "https://syndicate-lens.vercel.app",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization, x-csrf-token",
+          }
+        }
       );
-      errorResponse.headers.set("Access-Control-Allow-Origin", "*");
       return errorResponse;
     }
   } catch (error) {
     console.error("[Lens Auth] Unhandled error in lens auth API route:", error);
     const errorResponse = NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": process.env.NEXT_PUBLIC_APP_URL || "https://syndicate-lens.vercel.app",
+          "Access-Control-Allow-Credentials": "true",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization, x-csrf-token",
+        }
+      }
     );
-    errorResponse.headers.set("Access-Control-Allow-Origin", "*");
     return errorResponse;
   }
 }

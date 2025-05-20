@@ -126,6 +126,9 @@ const nextConfig = {
     NEXT_PUBLIC_AUTH_BACKEND_URL:
       process.env.NEXT_PUBLIC_AUTH_BACKEND_URL ||
       "https://site--syndicate-backend--wxs584h67csv.code.run/",
+    // For the backend to allow CORS from our frontend
+    FRONTEND_URL:
+      process.env.NEXT_PUBLIC_APP_URL || "https://syndicate-lens.vercel.app",
     SHARED_SECRET: process.env.SHARED_SECRET || "your-shared-secret-here",
     NEXT_PUBLIC_AUTH_BACKEND_SECRET:
       process.env.NEXT_PUBLIC_AUTH_BACKEND_SECRET || "your-shared-secret-here",

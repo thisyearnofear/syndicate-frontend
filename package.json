@@ -22,6 +22,7 @@
     "@gfxlabs/oku": "^1.0.141",
     "@hookform/resolvers": "^5.0.1",
     "@lens-chain/sdk": "^1.0.3",
+    "@lens-chain/storage-client": "^1.0.4",
     "@lens-protocol/client": "^2.0.0",
     "@lens-protocol/metadata": "^2.0.0",
     "@lens-protocol/react": "^2.3.2",

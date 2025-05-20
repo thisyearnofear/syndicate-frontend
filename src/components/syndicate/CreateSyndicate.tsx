@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { StorageClient, immutable } from "@lens-chain/storage-client";
+import { chains } from "@lens-chain/sdk/viem";
 import { Button } from "@/components/ui/inputs/button";
 import {
   Card,
@@ -179,13 +181,16 @@ export function CreateSyndicate() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [syndicateName, setSyndicateName] = useState("");
+  const [syndicateImage, setSyndicateImage] = useState<File | null>(null);
+  const [imageUri, setImageUri] = useState<string>("");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [syndicateDescription, setSyndicateDescription] = useState("");
   const [selectedCause, setSelectedCause] = useState("ocean");
   const [causeAllocation, setCauseAllocation] = useState(20);
   const [customCauseName, setCustomCauseName] = useState("");
   const [customCauseAddress, setCustomCauseAddress] = useState("");
 
-  // Use the syndicate contracts hook
+  // Use the syndicate contracts hook for smart contract interactions
   const {
     createSyndicate,
     isCreatingSyndicate,
@@ -239,13 +244,53 @@ export function CreateSyndicate() {
     setStep(step - 1);
   };
 
+  const handleImageUpload = useCallback(async (file: File) => {
+    try {
+      setIsUploadingImage(true);
+      
+      // Initialize Grove storage client
+      const storageClient = StorageClient.create();
+      
+      // Create immutable ACL for testnet
+      const acl = immutable(chains.testnet.id);
+      
+      // Upload the image
+      const response = await storageClient.uploadFile(file, { acl });
+      
+      // Wait for propagation
+      await response.waitForPropagation();
+      
+      // Set the image URI
+      setImageUri(response.uri);
+      console.log('Image uploaded successfully:', response.uri);
+      
+      return response.uri;
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      throw error;
+    } finally {
+      setIsUploadingImage(false);
+    }
+  }, []);
+
   const handleSubmit = async () => {
     if (!isConnected || !address) {
       return;
     }
 
     try {
+      // Upload image if selected
+      let finalImageUri = imageUri;
+      if (syndicateImage && !imageUri) {
+        finalImageUri = await handleImageUpload(syndicateImage);
+      }
+
       const causeDetails = getCauseDetails();
+
+      // Store image URI in local storage for now since we don't have smart contract storage
+      if (finalImageUri) {
+        localStorage.setItem(`syndicate-image-${syndicateName}`, finalImageUri);
+      }
 
       // Use the hook to create a syndicate
       const treasuryAddress = await createSyndicate(
@@ -338,6 +383,34 @@ export function CreateSyndicate() {
           <CardContent>
             {step === 1 && (
               <div className="space-y-4">
+                <div>
+                  <Label htmlFor="image" className="block mb-2">Syndicate Image</Label>
+                  <Input
+                    id="image"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setSyndicateImage(file);
+                        setImageUri(''); // Reset URI when new image selected
+                      }
+                    }}
+                    className="mb-2"
+                  />
+                  {isUploadingImage && (
+                    <div className="text-sm text-cyan-500 flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Uploading image to Grove storage...
+                    </div>
+                  )}
+                  {imageUri && (
+                    <div className="text-sm text-green-500 flex items-center gap-2">
+                      <Check className="h-4 w-4" />
+                      Image uploaded successfully
+                    </div>
+                  )}
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="name">Syndicate Name</Label>
                   <Input

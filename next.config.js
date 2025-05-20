@@ -159,8 +159,7 @@ const nextConfig = {
       process.env.NEXT_PUBLIC_APP_URL || "https://syndicate-lens.vercel.app",
     // Hardcoded for hackathon purpose only - not for production use
     SHARED_SECRET: "5010728756",
-    NEXT_PUBLIC_AUTH_BACKEND_SECRET:
-      process.env.NEXT_PUBLIC_AUTH_BACKEND_SECRET || "your-shared-secret-here",
+    NEXT_PUBLIC_AUTH_BACKEND_SECRET: "5010728756",
     // Use dedicated RPC providers instead of public endpoints
     NEXT_PUBLIC_LENS_MAINNET_RPC_URL:
       process.env.NEXT_PUBLIC_LENS_MAINNET_RPC_URL ||

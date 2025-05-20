@@ -49,20 +49,31 @@ export class LensAuthService {
         // This ensures we're using the correct URL in both development and production
         // In development, we need to point to port 3003 where the backend is running
         const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
+        
+        // Use the specific production backend URL from next.config.js when not in development
+        const prodBackendUrl = process.env.NEXT_PUBLIC_AUTH_BACKEND_URL || 'https://site--syndicate-backend--wxs584h67csv.code.run/';
+        
         const apiBaseUrl = isDevelopment 
           ? 'http://localhost:3003' 
-          : (process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin);
+          : prodBackendUrl;
         console.log(`Using API base URL: ${apiBaseUrl} (Development mode: ${isDevelopment})`);
         
         // Construct the full path to ensure it works in all environments
-        const authUrl = `${apiBaseUrl}/api/lens/auth`;
+        // The backend endpoint is just '/authorize', not '/api/lens/auth'
+        const authUrl = `${apiBaseUrl}/authorize`;
         console.log(`Making auth request to: ${authUrl}`);
+        
+        // Get shared secret for backend authorization
+        // We're using the value from next.config.js env section
+        const sharedSecret = process.env.NEXT_PUBLIC_AUTH_BACKEND_SECRET || '5010728756';
+        console.log(`Using shared secret for authorization (length: ${sharedSecret.length}, matches expected: ${sharedSecret === '5010728756'})`);
         
         // Using server-side API route for security with full URL path
         const response = await fetch(authUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${sharedSecret}`, // Add Authorization header
             // No CSRF tokens, completely disabled
           },
           // credentials: "include" removed to completely bypass CSRF handling

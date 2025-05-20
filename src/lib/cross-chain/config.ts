@@ -52,7 +52,7 @@ export const GHO_ADDRESS_LENS_TESTNET = WGRASS_ADDRESS_LENS_TESTNET; // GHO does
 // Token addresses
 export const USDC_ADDRESS_LENS =
   process.env.NEXT_PUBLIC_USDC_ADDRESS_LENS ||
-  "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"; // USDC on Lens Chain
+  "0x88F08E304EC4f90D644Cec3Fb69b8aD414acf884"; // USDC on Lens Chain
 export const USDC_ADDRESS_BASE =
   process.env.NEXT_PUBLIC_USDC_ADDRESS_BASE ||
   "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // USDC on Base
@@ -87,7 +87,7 @@ export const CHAINS = {
       process.env.NEXT_PUBLIC_LENS_CHAIN_RPC_URL || "https://rpc.lens.xyz",
     usdcAddress:
       process.env.NEXT_PUBLIC_USDC_ADDRESS_LENS ||
-      "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", // USDC on Lens
+      "0x88F08E304EC4f90D644Cec3Fb69b8aD414acf884", // USDC on Lens
     blockExplorerUrl: "https://explorer.lens.xyz",
     nativeCurrency: {
       name: "GHO",

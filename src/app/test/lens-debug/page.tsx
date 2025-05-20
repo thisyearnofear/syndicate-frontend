@@ -42,7 +42,8 @@ export default function LensDebugPage() {
           break;
         case "backendHealth":
           const baseUrl =
-            process.env.NEXT_PUBLIC_AUTH_BACKEND_URL || "http://localhost:8080";
+            process.env.NEXT_PUBLIC_AUTH_BACKEND_URL || "http://localhost:3003";
+          console.log(`Using backend URL for health check: ${baseUrl}`);
           const response = await fetch(`${baseUrl}/`, {
             method: "GET",
             mode: "cors",

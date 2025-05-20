@@ -17,6 +17,7 @@ import {
 } from "@/lib/wagmi-chains";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { chainSwitchOrchestrator } from "@/services/ChainSwitchOrchestrator";
+import { LensAuthProvider } from "@/components/lens/LensAuthProvider";
 
 // Get RPC URLs from environment or defaults
 const LENS_MAINNET_RPC_URL =
@@ -104,8 +105,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <QueryClientProvider client={queryClient}>
           <ConnectKitProvider>
             <WalletProvider>
-              <ChainSynchronizer />
-              <DecentProvider>{children}</DecentProvider>
+              <LensAuthProvider autoConnect={true}>
+                <ChainSynchronizer />
+                <DecentProvider>{children}</DecentProvider>
+              </LensAuthProvider>
             </WalletProvider>
           </ConnectKitProvider>
         </QueryClientProvider>

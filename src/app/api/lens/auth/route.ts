@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Get environment variables (these are server-side only)
-    const backendUrl = process.env.AUTH_BACKEND_URL || "http://localhost:8080";
+    const backendUrl = process.env.AUTH_BACKEND_URL || "http://localhost:3003";
     const sharedSecret = process.env.SHARED_SECRET;
 
     console.log(`[Lens Auth] Using backend URL: ${backendUrl}`);

@@ -22,9 +22,7 @@ export function MegapotPage() {
           transition={{ duration: 0.5 }}
           className="mb-8 text-center"
         >
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">
-            Megapot Jackpots
-          </h1>
+          {/* Removed duplicate heading since it's already in the header navigation */}
           <p className="text-white/70 max-w-2xl mx-auto mb-6">
             Join our Syndicate pools to increase your chances of winning these
             jackpots while supporting causes you care about.

@@ -84,7 +84,7 @@ export const CHAINS = {
     id: 232,
     name: "Lens Chain",
     rpcUrl:
-      process.env.NEXT_PUBLIC_LENS_CHAIN_RPC_URL || "https://rpc.lens.xyz",
+      process.env.NEXT_PUBLIC_LENS_CHAIN_RPC_URL || "https://lens-mainnet.g.alchemy.com/v2/zXTB8midlluEtdL8Gay5bvz5RI-FfsDH",
     usdcAddress:
       process.env.NEXT_PUBLIC_USDC_ADDRESS_LENS ||
       "0x88F08E304EC4f90D644Cec3Fb69b8aD414acf884", // USDC on Lens

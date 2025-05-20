@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/inputs/button";
 import Image from "next/image";
+import { LensConnectButton } from "@/components/lens/LensConnectButton";
 
 export function Header() {
   return (
@@ -11,12 +12,12 @@ export function Header() {
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <div className="h-9 relative">
-            <Image 
-              src="/logo-banner.png" 
-              alt="Syndicate" 
-              width={180} 
-              height={36} 
-              className="h-full w-auto" 
+            <Image
+              src="/logo-banner.png"
+              alt="Syndicate"
+              width={180}
+              height={36}
+              className="h-full w-auto"
               priority
             />
           </div>
@@ -41,6 +42,12 @@ export function Header() {
               Megapot Jackpots
             </Button>
           </Link>
+
+          <LensConnectButton
+            size="sm"
+            variant="default"
+            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 text-white"
+          />
         </div>
       </div>
     </header>

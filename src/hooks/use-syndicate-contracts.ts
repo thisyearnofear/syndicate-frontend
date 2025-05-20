@@ -61,6 +61,11 @@ export function useSyndicateContracts(): SyndicateHookResult {
 
   // Get client for Lens chain
   const getLensClient = useCallback(() => {
+    // Get the RPC URL directly from the config
+    const rpcUrl = CHAINS[ChainId.LENS].rpcUrl;
+
+    console.log("Creating Lens client with RPC URL:", rpcUrl);
+
     return createPublicClient({
       chain: {
         id: ChainId.LENS,
@@ -73,14 +78,14 @@ export function useSyndicateContracts(): SyndicateHookResult {
         },
         rpcUrls: {
           default: {
-            http: [CHAINS[ChainId.LENS].rpcUrl],
+            http: [rpcUrl],
           },
           public: {
-            http: [CHAINS[ChainId.LENS].rpcUrl],
+            http: [rpcUrl],
           },
         },
       },
-      transport: http(CHAINS[ChainId.LENS].rpcUrl),
+      transport: http(rpcUrl),
     });
   }, []);
 
@@ -90,18 +95,56 @@ export function useSyndicateContracts(): SyndicateHookResult {
 
     try {
       setIsLoadingSyndicates(true);
+
+      // Create a new client instance for each request to ensure fresh configuration
       const lensClient = getLensClient();
+
+      // Verify chain connection before proceeding
+      try {
+        const chainId = await lensClient.getChainId();
+        console.log("Connected to chain ID:", chainId);
+
+        if (chainId !== ChainId.LENS) {
+          console.warn(`Connected to chain ID ${chainId}, but expected Lens Chain (${ChainId.LENS})`);
+        }
+      } catch (chainError) {
+        console.error("Failed to get chain ID:", chainError);
+        throw new Error("Could not connect to Lens Chain. Please check your network connection.");
+      }
+
       const registryAddress = getContractAddress(
         ChainId.LENS,
         "SYNDICATE_REGISTRY"
       ) as Address;
 
-      // Get syndicate count
-      const count = (await lensClient.readContract({
-        address: registryAddress,
-        abi: SyndicateRegistryABI,
-        functionName: "getSyndicateCount",
-      })) as bigint;
+      console.log("Using registry address:", registryAddress);
+
+      // Verify the contract exists
+      try {
+        const code = await lensClient.getBytecode({ address: registryAddress });
+        if (!code || code === "0x") {
+          throw new Error(`No contract found at address ${registryAddress}`);
+        }
+        console.log("Registry contract verified at", registryAddress);
+      } catch (contractError) {
+        console.error("Contract verification error:", contractError);
+        throw new Error(`Failed to verify registry contract at ${registryAddress}`);
+      }
+
+      // Get syndicate count with better error handling
+      let count: bigint;
+      try {
+        count = (await lensClient.readContract({
+          address: registryAddress,
+          abi: SyndicateRegistryABI,
+          functionName: "getSyndicateCount",
+        })) as bigint;
+
+        console.log("Total syndicate count:", count.toString());
+      } catch (countError) {
+        console.error("Failed to get syndicate count:", countError);
+        throw new Error("Failed to read syndicate count from registry");
+      }
 
       // Get all syndicate addresses
       const limit = 10n; // Fetch 10 at a time
@@ -109,45 +152,58 @@ export function useSyndicateContracts(): SyndicateHookResult {
 
       for (let offset = 0n; offset < count; offset += limit) {
         const batchSize = offset + limit > count ? count - offset : limit;
-        const addresses = (await lensClient.readContract({
-          address: registryAddress,
-          abi: SyndicateRegistryABI,
-          functionName: "getSyndicatePaginated",
-          args: [offset, batchSize],
-        })) as Address[];
+        try {
+          const addresses = (await lensClient.readContract({
+            address: registryAddress,
+            abi: SyndicateRegistryABI,
+            functionName: "getSyndicatePaginated",
+            args: [offset, batchSize],
+          })) as Address[];
 
-        syndicateAddresses.push(...addresses);
+          syndicateAddresses.push(...addresses);
+        } catch (paginationError) {
+          console.error(`Failed to get syndicates at offset ${offset}:`, paginationError);
+          // Continue with the next batch instead of failing completely
+        }
       }
+
+      console.log("Retrieved syndicate addresses:", syndicateAddresses.length);
 
       // Get details for each syndicate
       const syndicates: SyndicateInfo[] = [];
 
       for (const treasuryAddress of syndicateAddresses) {
-        const data = (await lensClient.readContract({
-          address: registryAddress,
-          abi: SyndicateRegistryABI,
-          functionName: "syndicates",
-          args: [treasuryAddress],
-        })) as any[];
+        try {
+          const data = (await lensClient.readContract({
+            address: registryAddress,
+            abi: SyndicateRegistryABI,
+            functionName: "syndicates",
+            args: [treasuryAddress],
+          })) as any[];
 
-        const syndicate: SyndicateInfo = {
-          treasuryAddress: data[0] as string,
-          creator: data[1] as string,
-          name: data[2] as string,
-          cause: data[3] as string,
-          causeAddress: data[4] as string,
-          causePercentage: Number(data[5]),
-          createdAt: Number(data[6]),
-          active: data[7] as boolean,
-          lensProfileId: Number(data[8]),
-        };
+          const syndicate: SyndicateInfo = {
+            treasuryAddress: data[0] as string,
+            creator: data[1] as string,
+            name: data[2] as string,
+            cause: data[3] as string,
+            causeAddress: data[4] as string,
+            causePercentage: Number(data[5]),
+            createdAt: Number(data[6]),
+            active: data[7] as boolean,
+            lensProfileId: Number(data[8]),
+          };
 
-        // Only add syndicates created by the current user
-        if (syndicate.creator.toLowerCase() === address.toLowerCase()) {
-          syndicates.push(syndicate);
+          // Only add syndicates created by the current user
+          if (syndicate.creator.toLowerCase() === address.toLowerCase()) {
+            syndicates.push(syndicate);
+          }
+        } catch (syndicateError) {
+          console.error(`Failed to get details for syndicate ${treasuryAddress}:`, syndicateError);
+          // Continue with the next syndicate instead of failing completely
         }
       }
 
+      console.log("User syndicates found:", syndicates.length);
       setUserSyndicates(syndicates);
     } catch (error) {
       console.error("Error loading syndicates:", error);

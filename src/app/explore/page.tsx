@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/inputs/button";
 import { ErrorBoundary } from "@/components/ui/utils/error-boundary";
 import { AdaptedCausesSection } from "@/components/ui/adapted-causes-section";
 import { motion } from "framer-motion";
+import { LensConnectButton } from "@/components/lens/LensConnectButton";
 
 export default function ExplorePage() {
   return (
@@ -31,12 +32,11 @@ export default function ExplorePage() {
               </Button>
             </Link>
 
-            <Button
+            <LensConnectButton
               size="sm"
+              variant="default"
               className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 text-white"
-            >
-              Connect Wallet
-            </Button>
+            />
           </div>
         </div>
       </header>

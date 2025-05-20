@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
 
       // Set CSRF cookie in response
       jsonResponse.cookies.set(CSRF_COOKIE, csrfToken, {
-        httpOnly: true,
+        httpOnly: false, // Changed from true to false to make it accessible to JavaScript
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
@@ -255,7 +255,7 @@ export async function POST(request: NextRequest) {
 
     // Set CSRF cookie even in error response
     errorResponse.cookies.set(CSRF_COOKIE, csrfToken, {
-      httpOnly: true,
+      httpOnly: false, // Changed from true to false to make it accessible to JavaScript
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
